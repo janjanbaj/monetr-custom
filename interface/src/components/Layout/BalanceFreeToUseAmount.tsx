@@ -6,6 +6,7 @@ import { useCurrentBalance } from '@monetr/interface/hooks/useCurrentBalance';
 import useLocaleCurrency from '@monetr/interface/hooks/useLocaleCurrency';
 import { useSelectedBankAccount } from '@monetr/interface/hooks/useSelectedBankAccount';
 import { BankAccountSubType } from '@monetr/interface/models/BankAccount';
+import CurrencyTooltip from '@monetr/interface/components/CurrencyTooltip';
 import { AmountType } from '@monetr/interface/util/amounts';
 
 import styles from './BalanceFreeToUseAmount.module.scss';
@@ -28,9 +29,11 @@ export default function BalanceFreeToUseAmount(): JSX.Element {
               Free-To-Use:
             </Typography>
           </Flex>
-          <Typography color={color} size='lg' weight='semibold' wrapping='nowrap'>
-            {locale.formatAmount(balance?.free, AmountType.Stored)}
-          </Typography>
+          <CurrencyTooltip amount={balance?.free || 0}>
+            <Typography color={color} size='lg' weight='semibold' wrapping='nowrap'>
+              {locale.formatAmount(balance?.free, AmountType.Stored)}
+            </Typography>
+          </CurrencyTooltip>
         </Flex>
       );
     }

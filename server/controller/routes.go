@@ -278,6 +278,7 @@ func (c *Controller) RegisterRoutes(app *echo.Echo) {
 	billed.POST("/icons/search", c.searchIcon)
 	// Locale and currency data
 	billed.GET("/locale/currency", c.listCurrencies)
+	billed.GET("/exchange/rate", c.getExchangeRate)
 	// Account
 	billed.DELETE("/account", c.deleteAccount)
 	// Links

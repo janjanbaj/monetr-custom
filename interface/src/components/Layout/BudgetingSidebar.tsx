@@ -19,7 +19,9 @@ import { useSelectedBankAccount } from '@monetr/interface/hooks/useSelectedBankA
 import { AmountType } from '@monetr/interface/util/amounts';
 import mergeClasses from '@monetr/interface/util/mergeClasses';
 
+import CurrencyTooltip from '@monetr/interface/components/CurrencyTooltip';
 import BudgetingSidebarTitle from './BudgetingSidebarTitle';
+import CurrencyExchangeCard from './CurrencyExchangeCard';
 import styles from './BudgetSidebar.module.scss';
 
 export interface BudgetingSidebarProps {
@@ -62,18 +64,22 @@ export default function BudgetingSidebar(props: BudgetingSidebarProps): JSX.Elem
             <Typography color='inherit' ellipsis size='lg' weight='medium'>
               Expenses
             </Typography>
-            <Badge className={styles.badgeRight} size='sm'>
-              {locale.formatAmount(balance?.expenses, AmountType.Stored)}
-            </Badge>
+            <CurrencyTooltip amount={balance?.expenses || 0}>
+              <Badge className={styles.badgeRight} size='sm'>
+                {locale.formatAmount(balance?.expenses, AmountType.Stored)}
+              </Badge>
+            </CurrencyTooltip>
           </NavigationItem>
           <NavigationItem to={`/bank/${bankAccount?.bankAccountId}/goals`}>
             <PiggyBank />
             <Typography color='inherit' ellipsis size='lg' weight='medium'>
               Goals
             </Typography>
-            <Badge className={styles.badgeRight} size='sm'>
-              {locale.formatAmount(balance?.goals, AmountType.Stored)}
-            </Badge>
+            <CurrencyTooltip amount={balance?.goals || 0}>
+              <Badge className={styles.badgeRight} size='sm'>
+                {locale.formatAmount(balance?.goals, AmountType.Stored)}
+              </Badge>
+            </CurrencyTooltip>
           </NavigationItem>
           <NavigationItem to={`/bank/${bankAccount?.bankAccountId}/funding`}>
             <CalendarSync />
@@ -95,6 +101,7 @@ export default function BudgetingSidebar(props: BudgetingSidebarProps): JSX.Elem
             </Typography>
           </NavigationItem>
         </div>
+        <CurrencyExchangeCard />
         <PlaidBankStatusCard />
         <PlaidLastUpdatedCard linkId={bankAccount?.linkId} />
       </div>

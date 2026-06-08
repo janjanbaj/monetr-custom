@@ -1,0 +1,57 @@
+@use '@monetr/interface/mixins';
+@use '@monetr/interface/variables';
+
+.card {
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 3 * variables.$size;
+  background-color: var(--background-emphasis);
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  gap: 2 * variables.$size;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease;
+
+  &:hover {
+    border-color: var(--content-subtle);
+  }
+}
+
+.title {
+  color: var(--content-emphasis);
+  @include mixins.text-small;
+  font-weight: var(--semibold);
+  margin-bottom: 1 * variables.$size;
+}
+
+.rates {
+  display: flex;
+  flex-direction: column;
+  gap: 1 * variables.$size;
+  @include mixins.text-extra-small;
+  color: var(--content-subtle);
+}
+
+.rateItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.rateValue {
+  font-family: monospace;
+  font-weight: var(--semibold);
+  color: var(--content-emphasis);
+}
+
+.selectWrapper {
+  margin-top: 1 * variables.$size;
+  width: 100%;
+}
+
+.loadingText {
+  @include mixins.text-extra-small;
+  color: var(--content-subtle);
+  font-style: italic;
+}

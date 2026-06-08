@@ -4,6 +4,7 @@ import Flex from '@monetr/interface/components/Flex';
 import Typography from '@monetr/interface/components/Typography';
 import { useCurrentBalance } from '@monetr/interface/hooks/useCurrentBalance';
 import useLocaleCurrency from '@monetr/interface/hooks/useLocaleCurrency';
+import CurrencyTooltip from '@monetr/interface/components/CurrencyTooltip';
 import { AmountType } from '@monetr/interface/util/amounts';
 
 export default function BalanceCurrentAmount(): JSX.Element {
@@ -18,9 +19,11 @@ export default function BalanceCurrentAmount(): JSX.Element {
           Current:
         </Typography>
       </Flex>
-      <Typography color='emphasis' size='lg' weight='semibold'>
-        {locale.formatAmount(balance?.current, AmountType.Stored)}
-      </Typography>
+      <CurrencyTooltip amount={balance?.current || 0}>
+        <Typography color='emphasis' size='lg' weight='semibold'>
+          {locale.formatAmount(balance?.current, AmountType.Stored)}
+        </Typography>
+      </CurrencyTooltip>
     </Flex>
   );
 }

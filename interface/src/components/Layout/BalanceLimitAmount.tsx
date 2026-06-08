@@ -6,6 +6,7 @@ import { useCurrentBalance } from '@monetr/interface/hooks/useCurrentBalance';
 import useLocaleCurrency from '@monetr/interface/hooks/useLocaleCurrency';
 import { useSelectedBankAccount } from '@monetr/interface/hooks/useSelectedBankAccount';
 import { BankAccountSubType } from '@monetr/interface/models/BankAccount';
+import CurrencyTooltip from '@monetr/interface/components/CurrencyTooltip';
 import { AmountType } from '@monetr/interface/util/amounts';
 
 export default function BalanceLimitAmount(): React.JSX.Element {
@@ -23,9 +24,11 @@ export default function BalanceLimitAmount(): React.JSX.Element {
               Limit:
             </Typography>
           </Flex>
-          <Typography color='emphasis' size='lg' weight='semibold'>
-            {locale.formatAmount(balance?.limit, AmountType.Stored)}
-          </Typography>
+          <CurrencyTooltip amount={balance?.limit || 0}>
+            <Typography color='emphasis' size='lg' weight='semibold'>
+              {locale.formatAmount(balance?.limit, AmountType.Stored)}
+            </Typography>
+          </CurrencyTooltip>
         </Flex>
       );
   }

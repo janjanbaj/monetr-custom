@@ -14,6 +14,7 @@ import useLocaleCurrency from '@monetr/interface/hooks/useLocaleCurrency';
 import { AmountType } from '@monetr/interface/util/amounts';
 import FixedDeposit from '@monetr/interface/models/FixedDeposit';
 import { showNewFixedDepositModal } from '@monetr/interface/modals/NewFixedDepositModal';
+import CurrencyTooltip from '@monetr/interface/components/CurrencyTooltip';
 
 import styles from './fixed_deposits.module.scss';
 
@@ -94,22 +95,38 @@ export default function FixedDepositsPage(): JSX.Element {
           <div className={styles.analyticsCard}>
             <Coins className={styles.analyticsCardIcon} />
             <span className={styles.cardTitle}>Free-To-Use Balance</span>
-            <span className={styles.cardValue}>{locale.formatAmount(freeBalance, AmountType.Stored)}</span>
+            <span className={styles.cardValue}>
+              <CurrencyTooltip amount={freeBalance}>
+                {locale.formatAmount(freeBalance, AmountType.Stored)}
+              </CurrencyTooltip>
+            </span>
           </div>
           <div className={styles.analyticsCard}>
             <Landmark className={styles.analyticsCardIcon} />
             <span className={styles.cardTitle}>Fixed Deposits ({activeDeposits.length} Active)</span>
-            <span className={styles.cardValue}>{locale.formatAmount(activeDepositsTotal, AmountType.Stored)}</span>
+            <span className={styles.cardValue}>
+              <CurrencyTooltip amount={activeDepositsTotal}>
+                {locale.formatAmount(activeDepositsTotal, AmountType.Stored)}
+              </CurrencyTooltip>
+            </span>
           </div>
           <div className={styles.analyticsCard}>
             <BarChart2 className={styles.analyticsCardIcon} />
             <span className={styles.cardTitle}>Combined Net Worth</span>
-            <span className={styles.cardValue}>{locale.formatAmount(combinedNetWorth, AmountType.Stored)}</span>
+            <span className={styles.cardValue}>
+              <CurrencyTooltip amount={combinedNetWorth}>
+                {locale.formatAmount(combinedNetWorth, AmountType.Stored)}
+              </CurrencyTooltip>
+            </span>
           </div>
           <div className={styles.analyticsCard}>
             <TrendingUp className={styles.analyticsCardIcon} />
             <span className={styles.cardTitle}>Projected Worth (w/ Interest)</span>
-            <span className={styles.cardValue}>{locale.formatAmount(projectedWorth, AmountType.Stored)}</span>
+            <span className={styles.cardValue}>
+              <CurrencyTooltip amount={projectedWorth}>
+                {locale.formatAmount(projectedWorth, AmountType.Stored)}
+              </CurrencyTooltip>
+            </span>
           </div>
         </div>
 
@@ -143,7 +160,11 @@ export default function FixedDepositsPage(): JSX.Element {
                       <Badge variant='success'>Active</Badge>
                     </Flex>
 
-                    <div className={styles.amountText}>{locale.formatAmount(d.amount, AmountType.Stored)}</div>
+                    <div className={styles.amountText}>
+                      <CurrencyTooltip amount={d.amount}>
+                        {locale.formatAmount(d.amount, AmountType.Stored)}
+                      </CurrencyTooltip>
+                    </div>
 
                     <div className={styles.metaRow}>
                       <div>
@@ -159,7 +180,9 @@ export default function FixedDepositsPage(): JSX.Element {
                           Expected Interest
                         </Typography>
                         <Typography weight='medium' color='emphasis'>
-                          +{locale.formatAmount(expectedInterest, AmountType.Stored)}
+                          <CurrencyTooltip amount={expectedInterest}>
+                            +{locale.formatAmount(expectedInterest, AmountType.Stored)}
+                          </CurrencyTooltip>
                         </Typography>
                       </div>
                     </div>
@@ -227,7 +250,9 @@ export default function FixedDepositsPage(): JSX.Element {
                     </div>
                   </Flex>
                   <Flex align='center' gap='md'>
-                    <Typography weight='semibold'>{locale.formatAmount(d.amount, AmountType.Stored)}</Typography>
+                    <CurrencyTooltip amount={d.amount}>
+                      <Typography weight='semibold'>{locale.formatAmount(d.amount, AmountType.Stored)}</Typography>
+                    </CurrencyTooltip>
                     <Badge variant={d.status === 'matured' ? 'info' : 'brand'}>{d.status.toUpperCase()}</Badge>
                   </Flex>
                 </div>
