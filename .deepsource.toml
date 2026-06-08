@@ -1,0 +1,42 @@
+version = 1
+
+test_patterns = [
+  "**/*_test.go",
+  "**/*.spec.js",
+  "**/*.spec.ts"
+]
+
+[[analyzers]]
+name = "go"
+enabled = true
+
+  [analyzers.meta]
+  import_root = "github.com/monetr/monetr"
+
+[[analyzers]]
+name = "test-coverage"
+enabled = true
+
+[[analyzers]]
+name = "docker"
+enabled = true
+
+  [analyzers.meta]
+  dockerfile_paths = [
+    "Dockerfile",
+  ]
+
+[[analyzers]]
+name = "javascript"
+enabled = true
+
+  [analyzers.meta]
+  plugins = ["react"]
+
+[[analyzers]]
+name = "sql"
+enabled = true
+
+[[analyzers]]
+name = "secrets"
+enabled = true

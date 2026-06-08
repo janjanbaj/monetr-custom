@@ -1,0 +1,48 @@
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+
+import FundingSchedule from '@monetr/interface/models/FundingSchedule';
+import request from '@monetr/interface/util/request';
+
+export type CreateFundingScheduleRequest = Pick<
+  FundingSchedule,
+  | 'bankAccountId'
+  | 'name'
+  | 'description'
+  | 'ruleset'
+  | 'nextRecurrence'
+  | 'excludeWeekends'
+  | 'estimatedDeposit'
+  | 'autoCreateTransaction'
+>;
+
+export function useCreateFundingSchedule(): (_funding: CreateFundingScheduleRequest) => Promise<FundingSchedule> {
+  const queryClient = useQueryClient();
+
+  async function createFundingSchedule({
+    bankAccountId,
+    ...fundingSchedule
+  }: CreateFundingScheduleRequest): Promise<FundingSchedule> {
+    return request<Partial<FundingSchedule>>({
+      method: 'POST',
+      url: `/api/bank_accounts/${bankAccountId}/funding_schedules`,
+      data: fundingSchedule,
+    }).then(result => new FundingSchedule(result?.data));
+  }
+
+  const mutate = useMutation({
+    mutationFn: createFundingSchedule,
+    onSuccess: (newFunding: FundingSchedule) =>
+      Promise.all([
+        queryClient.setQueryData(
+          [`/api/bank_accounts/${newFunding.bankAccountId}/funding_schedules`],
+          (previous: Array<Partial<FundingSchedule>>) => (previous ?? []).concat(newFunding),
+        ),
+        queryClient.setQueryData(
+          [`/api/bank_accounts/${newFunding.bankAccountId}/funding_schedules/${newFunding.fundingScheduleId}`],
+          newFunding,
+        ),
+      ]),
+  });
+
+  return mutate.mutateAsync;
+}

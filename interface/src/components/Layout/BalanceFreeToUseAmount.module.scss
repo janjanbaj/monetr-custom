@@ -1,0 +1,8 @@
+@use '@monetr/interface/variables';
+
+.root {
+  min-width: 0;
+  flex-grow: 0;
+  flex-shrink: 1;
+  width: inherit;
+}

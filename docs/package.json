@@ -1,0 +1,41 @@
+{
+  "name": "@monetr/docs",
+  "type": "module",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "rspress dev",
+    "build": "rspress build",
+    "preview": "rspress preview"
+  },
+  "dependencies": {
+    "@fontsource-variable/inter": "5.2.8",
+    "@radix-ui/react-slot": "1.2.4",
+    "@rsbuild/plugin-sass": "1.5.2",
+    "@rspress/core": "2.0.13",
+    "@rspress/plugin-rss": "2.0.13",
+    "@rspress/plugin-sitemap": "2.0.13",
+    "@shikijs/transformers": "4.1.0",
+    "@tanstack/react-query": "5.100.14",
+    "class-variance-authority": "0.7.1",
+    "date-fns": "4.3.0",
+    "embla-carousel-autoplay": "8.6.0",
+    "embla-carousel-react": "8.6.0",
+    "katex": "0.17.0",
+    "lucide-react": "1.17.0",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "rehype-katex": "7.0.1",
+    "remark-math": "6.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/react": "18.3.29",
+    "@types/react-dom": "18.3.7",
+    "autoprefixer": "10.5.0",
+    "sass": "1.100.0",
+    "satori": "0.26.0",
+    "spellchecker-cli": "7.0.3",
+    "typescript": "5.9.3"
+  }
+}

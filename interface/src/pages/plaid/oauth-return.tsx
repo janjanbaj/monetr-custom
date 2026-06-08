@@ -1,0 +1,145 @@
+import { useEffect, useState } from 'react';
+import { captureEvent } from '@sentry/react';
+import { useQueryClient } from '@tanstack/react-query';
+import { useLocation } from 'wouter';
+
+import MSpinner from '@monetr/interface/components/MSpinner';
+import { OAuthRedirectPlaidLink } from '@monetr/interface/components/Plaid/OAuthRedirectPlaidLink';
+import Typography from '@monetr/interface/components/Typography';
+import request from '@monetr/interface/util/request';
+
+import styles from './oauth-return.module.scss';
+
+import type { PlaidLinkError, PlaidLinkOnExitMetadata, PlaidLinkOnSuccessMetadata } from 'react-plaid-link/src/types';
+
+interface State {
+  loading: boolean;
+  linkToken: string | null;
+  error: string | null;
+  linkId: number | null;
+  longPollAttempts: number;
+}
+
+export default function OauthReturn(): JSX.Element {
+  const queryClient = useQueryClient();
+  const [state, setState] = useState<Partial<State>>({
+    loading: true,
+  });
+
+  useEffect(() => {
+    request<{ linkToken: string }>({ method: 'GET', url: '/api/plaid/link/token/new?use_cache=true' })
+      .then(result =>
+        setState({
+          loading: false,
+          linkToken: result.data.linkToken,
+        }),
+      )
+      .catch(error =>
+        setState({
+          loading: false,
+          error: error,
+        }),
+      );
+  }, []);
+
+  const [, navigate] = useLocation();
+
+  async function longPollSetup(): Promise<void> {
+    setState(prevState => ({
+      longPollAttempts: prevState.longPollAttempts + 1,
+    }));
+
+    const { longPollAttempts, linkId } = state;
+    if (longPollAttempts > 6) {
+      return Promise.resolve();
+    }
+
+    return request({ method: 'GET', url: `/api/plaid/link/setup/wait/${linkId}` })
+      .then(() => Promise.resolve())
+      .catch(error => {
+        if (error.response.status === 408) {
+          return longPollSetup();
+        }
+
+        throw error;
+      });
+  }
+
+  function plaidLinkExit(error: null | PlaidLinkError, metadata: PlaidLinkOnExitMetadata) {
+    if (error) {
+      captureEvent({
+        message: 'Plaid link exited with error',
+        level: 'error',
+        tags: {
+          'plaid.request_id': metadata.request_id,
+          'plaid.link_session_id': metadata.link_session_id,
+        },
+        breadcrumbs: [
+          {
+            type: 'info',
+            level: 'info',
+            message: 'Error from Plaid link',
+            data: error,
+          },
+        ],
+      });
+    }
+
+    return navigate('/');
+  }
+
+  async function plaidLinkSuccess(public_token: string, metadata: PlaidLinkOnSuccessMetadata): Promise<void> {
+    setState({ loading: true });
+
+    return void request<{ linkId: number }>({
+      method: 'POST',
+      url: '/api/plaid/link/token/callback',
+      data: {
+        publicToken: public_token,
+        institutionId: metadata.institution.institution_id,
+        institutionName: metadata.institution.name,
+        accountIds: metadata.accounts.map((account: { id: string }) => account.id),
+      },
+    }).then(result => {
+      setState({
+        linkId: result.data.linkId,
+      });
+
+      return longPollSetup().then(() =>
+        Promise.all([
+          queryClient.invalidateQueries({ queryKey: ['/api/links'] }),
+          queryClient.invalidateQueries({ queryKey: ['/api/bank_accounts'] }),
+        ]),
+      );
+    });
+  }
+
+  function renderContents(): JSX.Element {
+    if (state.loading || !state.linkToken) {
+      return (
+        <div>
+          <Typography size='xl'>One moment...</Typography>
+          <div className={styles.spinnerWrapper}>
+            <MSpinner />
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div>
+        <OAuthRedirectPlaidLink
+          linkToken={state.linkToken}
+          plaidOnExit={plaidLinkExit}
+          plaidOnSuccess={plaidLinkSuccess}
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div className={styles.root}>
+      <div>{renderContents()}</div>
+    </div>
+  );
+}

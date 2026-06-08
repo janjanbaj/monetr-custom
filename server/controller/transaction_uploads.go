@@ -1,0 +1,228 @@
+package controller
+
+import (
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"strings"
+	"time"
+
+	"github.com/labstack/echo/v4"
+	"github.com/monetr/monetr/server/datasources/ofx/ofx_jobs"
+	. "github.com/monetr/monetr/server/models"
+	"github.com/monetr/monetr/server/queue"
+	"golang.org/x/net/websocket"
+)
+
+func (c *Controller) postTransactionUpload(ctx echo.Context) error {
+	c.scrubSentryBody(ctx)
+
+	bankAccountId, err := ParseID[BankAccount](ctx.Param("bankAccountId"))
+	if err != nil || bankAccountId.IsZero() {
+		return c.badRequest(ctx, "must specify a valid bank account Id")
+	}
+
+	repo := c.mustGetAuthenticatedRepository(ctx)
+	upload := TransactionUpload{
+		BankAccountId: bankAccountId,
+		Status:        TransactionUploadStatusPending,
+		Error:         nil,
+	}
+
+	// Take the body and upload it as a file
+	// TODO Add ClamAV anti-virus here
+	file, err := c.consumeFileUpload(ctx, upload)
+	if err != nil {
+		return err
+	}
+	upload.FileId = file.FileId
+	upload.File = file
+
+	// TODO Just build a content type equal function?
+	if !strings.EqualFold(string(file.ContentType), string(IntuitQFXContentType)) {
+		c.getLog(ctx).DebugContext(c.getContext(ctx), "could not create transaction upload because the file is not the expected content type: OFX", "contentType", file.ContentType)
+		return c.badRequest(ctx, "File is not a OFX file, and cannot be used for transaction imports")
+	}
+
+	if err := repo.CreateTransactionUpload(
+		c.getContext(ctx),
+		bankAccountId,
+		&upload,
+	); err != nil {
+		return c.wrapAndReturnError(ctx, err, http.StatusInternalServerError, "Failed to create transaction upload")
+	}
+
+	if err := queue.Enqueue(
+		c.getContext(ctx),
+		// Make sure to enqueue as part of this controller's database transaction!
+		c.Queue.WithTransaction(c.mustGetDatabase(ctx)),
+		ofx_jobs.ProcessOFXUpload,
+		ofx_jobs.ProcessOFXUploadArguments{
+			AccountId:           c.mustGetAccountId(ctx),
+			BankAccountId:       bankAccountId,
+			TransactionUploadId: upload.TransactionUploadId,
+		},
+	); err != nil {
+		return c.wrapAndReturnError(
+			ctx,
+			err,
+			http.StatusInternalServerError,
+			"Failed to enqueue upload for processing",
+		)
+	}
+
+	return ctx.JSON(http.StatusOK, upload)
+}
+
+func (c *Controller) getTransactionUploadById(ctx echo.Context) error {
+	bankAccountId, err := ParseID[BankAccount](ctx.Param("bankAccountId"))
+	if err != nil || bankAccountId.IsZero() {
+		return c.badRequest(ctx, "must specify a valid bank account Id")
+	}
+
+	transactionUploadId, err := ParseID[TransactionUpload](ctx.Param("transactionUploadId"))
+	if err != nil || transactionUploadId.IsZero() {
+		return c.badRequest(ctx, "must specify a valid transaction upload Id")
+	}
+
+	repo := c.mustGetAuthenticatedRepository(ctx)
+	upload, err := repo.GetTransactionUpload(
+		c.getContext(ctx),
+		bankAccountId,
+		transactionUploadId,
+	)
+	if err != nil {
+		return c.wrapPgError(ctx, err, "Failed to retrieve transaction upload by ID")
+	}
+
+	return ctx.JSON(http.StatusOK, upload)
+}
+
+func (c *Controller) getTransactionUploadProgress(ctx echo.Context) error {
+	bankAccountId, err := ParseID[BankAccount](ctx.Param("bankAccountId"))
+	if err != nil || bankAccountId.IsZero() {
+		return c.badRequest(ctx, "must specify a valid bank account Id")
+	}
+
+	transactionUploadId, err := ParseID[TransactionUpload](ctx.Param("transactionUploadId"))
+	if err != nil || transactionUploadId.IsZero() {
+		return c.badRequest(ctx, "must specify a valid transaction upload Id")
+	}
+
+	log := c.getLog(ctx)
+
+	repo := c.mustGetAuthenticatedRepository(ctx)
+	upload, err := repo.GetTransactionUpload(
+		c.getContext(ctx),
+		bankAccountId,
+		transactionUploadId,
+	)
+	if err != nil {
+		return c.wrapPgError(ctx, err, "Failed to retrieve transaction upload by ID")
+	}
+
+	channel := fmt.Sprintf(
+		"account:%s:transaction_upload:%s:progress",
+		c.mustGetAccountId(ctx), transactionUploadId,
+	)
+	listener, err := c.PubSub.Subscribe(
+		c.getContext(ctx),
+		c.mustGetAccountId(ctx),
+		channel,
+	)
+	if err != nil {
+		return c.wrapAndReturnError(ctx, err, http.StatusInternalServerError, "Failed to subscribe to transaction upload changes")
+	}
+	defer listener.Close()
+
+	timeout := time.NewTimer(2 * time.Minute)
+	defer timeout.Stop()
+
+	ticker := time.NewTicker(5 * time.Second)
+	defer ticker.Stop()
+
+	websocket.Handler(func(ws *websocket.Conn) {
+		defer ws.Close()
+
+		if err := c.sendWebsocketMessage(ctx, ws, upload); err != nil {
+			return
+		}
+
+		switch upload.Status {
+		case TransactionUploadStatusComplete, TransactionUploadStatusFailed:
+			log.With("status", upload.Status).DebugContext(c.getContext(ctx), "upload is already in a final status, sending message then closing")
+			_ = c.sendWebsocketMessage(ctx, ws, map[string]any{
+				"status": upload.Status,
+			})
+			return
+		}
+
+	ListenerLoop:
+		for {
+			select {
+			case <-timeout.C:
+				log.WarnContext(c.getContext(ctx), "transaction upload is taking too long, websocket will be terminated")
+				_ = c.sendWebsocketMessage(ctx, ws, map[string]any{
+					"status": "timed out",
+				})
+				break ListenerLoop
+			case <-ticker.C:
+				log.DebugContext(c.getContext(ctx), "no updated to transaction upload in 5 seconds, checking status from DB manually")
+				upload, err := repo.GetTransactionUpload(
+					c.getContext(ctx),
+					bankAccountId,
+					transactionUploadId,
+				)
+				if err != nil {
+					log.WarnContext(c.getContext(ctx), "failed to retrieve status of transaction upload from DB manually", "err", err)
+					continue
+				}
+
+				// Send the status over the socket since we manually pulled it from the
+				// DB. This way if we somehow miss a notification, we still get the
+				// behavior we want.
+				if err := c.sendWebsocketMessage(ctx, ws, map[string]any{
+					"status": upload.Status,
+				}); err != nil {
+					return
+				}
+
+				switch TransactionUploadStatus(upload.Status) {
+				case TransactionUploadStatusComplete, TransactionUploadStatusFailed:
+					log.With("status", upload.Status).DebugContext(c.getContext(ctx), "observed final status, ending socket")
+					break ListenerLoop
+				}
+			case status := <-listener.Channel():
+				log.With("status", status).DebugContext(c.getContext(ctx), "sending status message for transaction upload")
+				if err := c.sendWebsocketMessage(ctx, ws, map[string]any{
+					"status": status.Payload(),
+				}); err != nil {
+					return
+				}
+
+				switch TransactionUploadStatus(status.Payload()) {
+				case TransactionUploadStatusComplete, TransactionUploadStatusFailed:
+					log.With("status", status.Payload()).DebugContext(c.getContext(ctx), "observed final status, ending socket")
+					break ListenerLoop
+				}
+			}
+		}
+	}).ServeHTTP(ctx.Response(), ctx.Request())
+
+	return nil
+}
+
+func (c *Controller) sendWebsocketMessage(ctx echo.Context, ws *websocket.Conn, message any) error {
+	log := c.getLog(ctx)
+	msg, err := json.Marshal(message)
+	if err != nil {
+		log.ErrorContext(c.getContext(ctx), "failed to encode websocket message", "message", message, "err", err)
+		return err
+	}
+	if err := websocket.Message.Send(ws, string(msg)); err != nil {
+		log.ErrorContext(c.getContext(ctx), "failed to send websocket message", "message", message, "err", err)
+		return err
+	}
+
+	return nil
+}

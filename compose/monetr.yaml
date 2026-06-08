@@ -1,0 +1,93 @@
+###############################################################################
+# WARNING! This file is intended to be used for local development only! It    #
+# should not be used as a template for self hosted installations! Please read #
+# the configuration docs https://monetr.app/documentation/configure/ to learn #
+# more about how to configure monetr properly!                                #
+###############################################################################
+allowsignup: true
+environment: development
+plaid:
+  environment: https://sandbox.plaid.com
+  countryCodes:
+    - US
+    - CA
+backgroundjobs:
+  engine: postgresql
+  scheduler: internal
+redis:
+  enabled: true
+  address: valkey
+features:
+  # Enable transaction imports for local development.
+  transactionImports: true
+email:
+  enabled: true
+  domain: monetr.local
+  smtp:
+    username: monetr
+    password: mailpassword
+    host: mail
+    port: 1025
+  forgotPassword:
+    enabled: true
+    tokenlifetime: 10m0s
+  verification:
+    enabled: true
+    tokenLifetime: 10m0s
+logging:
+  format: pretty
+  level: trace
+lunchFlow:
+  enabled: true
+  allowedApiUrls:
+    - https://www.lunchflow.app/api/v1
+    - https://bogus.example.com/api/v1
+postgresql:
+  address: postgres
+  database: postgres
+  port: 5432
+  username: postgres
+security:
+  privateKey: /build/build/ed25519.key
+recaptcha:
+  enabled: false
+server:
+  cookies:
+    name: M-Token
+    sameSiteStrict: true
+    secure: false # Cant use secure over http.
+  listenport: 4000
+  statsport: 9000
+keyManagement:
+  aws:
+    region: us-east-1
+    accessKey: foo
+    secretKey: bar
+    keyId: bc436485-5092-42b8-92a3-0aa8b93536dc
+    endpoint: http://kms:8080
+  google:
+    credentialsJson: /etc/monetr/google-service-account.json
+    # Resource name must be specified using MONETR_KMS_RESOURCE_NAME
+  openbao:
+    keyId: monetr
+    authMethod: token
+    endpoint: http://openbao:80
+  vault:
+    keyId: monetr
+    authMethod: token
+    endpoint: http://vault:80
+storage:
+  # Enabled will be specified via MONETR_STORAGE_ENABLED
+  # enabled: true
+  # Provider will be specified via MONETR_STORAGE_PROVIDER
+  # provider: s3
+  s3:
+    endpoint: http://s3:9000
+    bucket: monetr-storage
+    region: us-east-1
+    forcePathStyle: true
+    useEnvCredentials: true # Use the AWS_ACCESS_KEY and AWS_SECRET_KEY env variables in development.
+  filesystem:
+    basePath: /build/build/development/storage 
+stripe:
+  freeTrialDays: 1 # For testing

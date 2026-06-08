@@ -1,0 +1,41 @@
+import parseDate from '@monetr/interface/util/parseDate';
+
+export enum PlaidLinkStatus {
+  Unknown = 'unknown',
+  Pending = 'pending',
+  Setup = 'setup',
+  Error = 'error',
+  PendingExpiration = 'pending_expiration',
+  Revoked = 'revoked',
+  Deactivated = 'deactivated',
+}
+
+export default class PlaidLink {
+  products: Array<string>;
+  status: PlaidLinkStatus;
+  errorCode?: string;
+  expirationDate?: Date;
+  newAccountsAvailable: boolean;
+  institutionId: string;
+  institutionName: string;
+  lastManualSync?: Date;
+  lastSuccessfulUpdate?: Date;
+  lastAttemptedUpdate?: Date;
+  updatedAt: Date;
+  createdAt: Date;
+  createdBy: string;
+
+  constructor(data?: Partial<PlaidLink>) {
+    if (data) {
+      Object.assign(this, {
+        ...data,
+        expirationDate: parseDate(data?.expirationDate),
+        lastManualSync: parseDate(data?.lastManualSync),
+        lastSuccessfulUpdate: parseDate(data?.lastSuccessfulUpdate),
+        lastAttemptedUpdate: parseDate(data?.lastAttemptedUpdate),
+        updatedAt: parseDate(data?.updatedAt),
+        createdAt: parseDate(data?.createdAt),
+      });
+    }
+  }
+}

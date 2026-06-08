@@ -1,0 +1,58 @@
+# Phase 1: DB Schema & Migrations
+
+This phase covers creating the SQL migrations to setup the `fixed_deposits` table in PostgreSQL.
+
+## Target Files
+1. [2026060800_AddFixedDeposits.tx.up.sql](file:///Users/janeetbajracharya/Desktop/Code/monetr/server/migrations/schema/2026060800_AddFixedDeposits.tx.up.sql) [NEW]
+2. [2026060800_AddFixedDeposits.tx.down.sql](file:///Users/janeetbajracharya/Desktop/Code/monetr/server/migrations/schema/2026060800_AddFixedDeposits.tx.down.sql) [NEW]
+
+---
+
+## Migration Definition
+
+### Up Migration (up.sql)
+```sql
+CREATE TABLE IF NOT EXISTS "fixed_deposits"
+(
+    "fixed_deposit_id"                VARCHAR(32) NOT NULL,
+    "account_id"                      VARCHAR(32) NOT NULL,
+    "source_bank_account_id"          VARCHAR(32) NOT NULL,
+    "fixed_bank_account_id"           VARCHAR(32) NOT NULL,
+    "funding_schedule_id"             VARCHAR(32),
+    "name"                            TEXT        NOT NULL,
+    "amount"                          BIGINT      NOT NULL DEFAULT 0,
+    "interest_rate"                   DOUBLE PRECISION NOT NULL DEFAULT 0.0,
+    "start_date"                      TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+    "end_date"                        TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+    "interest_frequency"              VARCHAR(32) NOT NULL,
+    "interest_destination"            VARCHAR(32) NOT NULL,
+    "interest_destination_account_id" VARCHAR(32),
+    "status"                          VARCHAR(32) NOT NULL,
+    "created_at"                      TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+    "updated_at"                      TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+    CONSTRAINT "pk_fixed_deposits" PRIMARY KEY ("fixed_deposit_id", "account_id"),
+    CONSTRAINT "fk_fixed_deposits_accounts" FOREIGN KEY ("account_id") REFERENCES "accounts" ("account_id") ON DELETE CASCADE,
+    CONSTRAINT "fk_fixed_deposits_source_bank" FOREIGN KEY ("source_bank_account_id", "account_id") REFERENCES "bank_accounts" ("bank_account_id", "account_id") ON DELETE CASCADE,
+    CONSTRAINT "fk_fixed_deposits_fixed_bank" FOREIGN KEY ("fixed_bank_account_id", "account_id") REFERENCES "bank_accounts" ("bank_account_id", "account_id") ON DELETE CASCADE,
+    CONSTRAINT "fk_fixed_deposits_destination_bank" FOREIGN KEY ("interest_destination_account_id", "account_id") REFERENCES "bank_accounts" ("bank_account_id", "account_id") ON DELETE SET NULL,
+    CONSTRAINT "fk_fixed_deposits_funding_schedule" FOREIGN KEY ("funding_schedule_id", "account_id", "fixed_bank_account_id") REFERENCES "funding_schedules" ("funding_schedule_id", "account_id", "bank_account_id") ON DELETE SET NULL
+);
+
+CREATE INDEX IF NOT EXISTS "idx_fixed_deposits_fixed_bank_account" ON "fixed_deposits" ("fixed_bank_account_id", "account_id");
+CREATE INDEX IF NOT EXISTS "idx_fixed_deposits_source_bank_account" ON "fixed_deposits" ("source_bank_account_id", "account_id");
+```
+
+### Down Migration (down.sql)
+```sql
+DROP TABLE IF EXISTS "fixed_deposits";
+```
+
+---
+
+## Verification Plan
+1. Run the migration to check if the schema is created without errors:
+   ```bash
+   # Use the migration command standard in the project (usually run by the server on boot, or test runner)
+   go test -v ./server/migrations/...
+   ```
+2. Verify table exists and has the correct schema in Postgres.

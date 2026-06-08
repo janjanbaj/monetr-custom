@@ -1,0 +1,40 @@
+{
+  "name": "@monetr",
+  "type": "module",
+  "version": "0.1.0",
+  "private": true,
+  "engines": {
+    "node": ">=20.12.0",
+    "pnpm": ">=9"
+  },
+  "packageManager": "pnpm@10.34.1",
+  "devDependencies": {
+    "@biomejs/biome": "2.4.16",
+    "typescript": "5.9.3"
+  },
+  "scripts": {
+    "monetr": "cmake --preset default && cmake --build build -t build.monetr",
+    "release": "cmake --preset release && cmake --build build -t build.monetr",
+    "test": "cmake --preset testing && ctest --test-dir build --no-tests=error --output-on-failure",
+    "develop": "cmake --preset default && cmake --build build -t development.monetr.up",
+    "develop-docs": "cmake --preset default && cmake --build build -t development.documentation.up",
+    "shutdown": "cmake --preset default && cmake --build build -t development.down",
+    "clean": "pnpm shutdown && cmake --build build -t clean && cmake -E remove_directory build"
+  },
+  "pnpm": {
+    "supportedArchitectures": {
+      "os": [
+        "linux",
+        "darwin",
+        "win32"
+      ],
+      "cpu": [
+        "x64",
+        "arm64"
+      ],
+      "libc": [
+        "glibc"
+      ]
+    }
+  }
+}

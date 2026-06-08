@@ -1,0 +1,75 @@
+@use '@monetr/interface/mixins';
+@use '@monetr/interface/variables';
+
+.transactionItemRoot {
+  &:hover {
+    .selectSpendingWrapper {
+      --ring-size: 1px;
+
+      svg {
+        opacity: 100%;
+      }
+    }
+  }
+}
+
+.selectSpendingRoot {
+  display: none;
+  width: 50%;
+  flex: 1 1 0%;
+  align-items: center;
+
+  @media (min-width: variables.$mediumScreen) {
+    display: flex;
+  }
+}
+
+.selectSpendingBlock {
+  width: 100%;
+  display: block;
+}
+
+.selectSpendingWrapper {
+  --ring-size: 0px;
+  transition-duration: 0ms;
+
+  svg {
+    opacity: 0%;
+  }
+
+  &:hover, &:focus-within {
+    svg {
+      opacity: 100%;
+    }
+  }
+
+  &:focus-within {
+    --ring-size: 2px;
+  }
+}
+
+.selectSpendingSkeleton {
+  width: 50%;
+  height: 5 * variables.$size;
+  margin-right: 2 * variables.$size;
+}
+
+.selectSpendingInput {
+  background-color: transparent;
+  flex: 1 1 0%;
+
+  @include mixins.text-base;
+  font-weight: var(--medium);
+
+  &[data-freetouse="true"] {
+    color: var(--content);
+  }
+
+  &[data-freetouse="false"] {
+    font-weight: var(--semibold);
+    color: var(--content-emphasis);
+  }
+}
+
+
+

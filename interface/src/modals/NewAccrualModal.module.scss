@@ -1,0 +1,50 @@
+@use '@monetr/interface/variables';
+
+.modal {
+  @media (min-width: variables.$smallScreen) {
+    max-width: 144 * variables.$size;
+  }
+}
+
+.form {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 2 * variables.$size;
+  padding: 2 * variables.$size;
+  justify-content: space-between;
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+}
+
+.heading {
+  margin-bottom: 2 * variables.$size;
+}
+
+.fieldRow {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+
+  @media (min-width: variables.$mediumScreen) {
+    flex-direction: row;
+    gap: 4 * variables.$size;
+  }
+}
+
+.fieldRowItem {
+  width: 100%;
+
+  @media (min-width: variables.$mediumScreen) {
+    width: 50%;
+  }
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 2 * variables.$size;
+}

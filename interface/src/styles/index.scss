@@ -1,0 +1,367 @@
+@use 'sass:color';
+@use '@monetr/interface/variables';
+
+// Base reset. Reproduces the Preflight defaults the modules rely on — notably
+// `border-style: solid` + `border-width: 0`, since rules set border width and
+// color but never style.
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  border-width: 0;
+  border-style: solid;
+  border-color: currentColor;
+}
+
+html {
+  line-height: 1.5;
+  -webkit-text-size-adjust: 100%;
+  -moz-tab-size: 4;
+  tab-size: 4;
+  font-family: 'Inter Variable', sans-serif;
+  font-feature-settings: normal;
+  font-variation-settings: normal;
+  // Preflight suppressed the mobile tap highlight; without it, holding a button
+  // (or any clickable element) flashes the browser's default grey overlay.
+  -webkit-tap-highlight-color: transparent;
+  background-color: var(--background);
+}
+
+// Remove default margins on common block elements.
+body,
+blockquote,
+dl,
+dd,
+h1, h2, h3, h4, h5, h6,
+hr,
+figure,
+p,
+pre {
+  margin: 0;
+}
+
+hr {
+  height: 0;
+  color: inherit;
+  border-top-width: 1px;
+}
+
+abbr:where([title]) {
+  text-decoration: underline dotted;
+}
+
+// Headings inherit size/weight; styling is opted into explicitly.
+h1, h2, h3, h4, h5, h6 {
+  font-size: inherit;
+  font-weight: inherit;
+}
+
+a {
+  color: inherit;
+  text-decoration: inherit;
+}
+
+b, strong {
+  font-weight: bolder;
+}
+
+code, kbd, samp, pre {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    'Liberation Mono', 'Courier New', monospace;
+  font-size: 1em;
+}
+
+small {
+  font-size: 80%;
+}
+
+sub, sup {
+  font-size: 75%;
+  line-height: 0;
+  position: relative;
+  vertical-align: baseline;
+}
+
+sub {
+  bottom: -0.25em;
+}
+
+sup {
+  top: -0.5em;
+}
+
+table {
+  text-indent: 0;
+  border-color: inherit;
+  border-collapse: collapse;
+}
+
+// Form controls inherit typography and shed browser chrome.
+button,
+input,
+optgroup,
+select,
+textarea {
+  font-family: inherit;
+  font-feature-settings: inherit;
+  font-variation-settings: inherit;
+  font-size: 100%;
+  font-weight: inherit;
+  line-height: inherit;
+  letter-spacing: inherit;
+  color: inherit;
+  margin: 0;
+  padding: 0;
+}
+
+button,
+select {
+  text-transform: none;
+}
+
+// :where() keeps this at zero specificity so component button variants (e.g.
+// .primary, which sets its own background) win without needing !important.
+:where(button, [type='button'], [type='reset'], [type='submit']) {
+  -webkit-appearance: button;
+  background-color: transparent;
+  background-image: none;
+}
+
+// Preflight gave every button (and role="button") a pointer cursor, and disabled
+// controls the default arrow. Native buttons default to `cursor: default`, so
+// the modules assume this rule exists; component variants opt into other cursors
+// (e.g. not-allowed) with their own higher-specificity rules.
+button,
+[role='button'] {
+  cursor: pointer;
+}
+
+:disabled {
+  cursor: default;
+}
+
+:-moz-focusring {
+  outline: auto;
+}
+
+// Remove Firefox's red box-shadow on invalid form fields.
+:-moz-ui-invalid {
+  box-shadow: none;
+}
+
+progress {
+  vertical-align: baseline;
+}
+
+// Correct the cursor style of number-input spin buttons in Safari.
+::-webkit-inner-spin-button,
+::-webkit-outer-spin-button {
+  height: auto;
+}
+
+// Normalize search inputs and their WebKit decorations.
+[type='search'] {
+  -webkit-appearance: textfield;
+  outline-offset: -2px;
+}
+
+::-webkit-search-decoration {
+  -webkit-appearance: none;
+}
+
+// Style the file-upload button like a regular button and inherit its font.
+::-webkit-file-upload-button {
+  -webkit-appearance: button;
+  font: inherit;
+}
+
+fieldset {
+  margin: 0;
+  padding: 0;
+}
+
+legend {
+  padding: 0;
+}
+
+// Reset default padding on native dialogs.
+dialog {
+  padding: 0;
+}
+
+// Lists are unstyled by default; components opt back in as needed.
+ol, ul, menu {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+textarea {
+  resize: vertical;
+}
+
+input::placeholder,
+textarea::placeholder {
+  opacity: 1;
+  color: var(--content-placeholder);
+}
+
+summary {
+  display: list-item;
+}
+
+// Media defaults to block-level and constrained.
+img, svg, video, canvas, audio, iframe, embed, object {
+  display: block;
+  vertical-align: middle;
+}
+
+img, video {
+  max-width: 100%;
+  height: auto;
+}
+
+[hidden] {
+  display: none;
+}
+
+body {
+  display: flex;
+  min-height: 100vh;
+  background-color: var(--background);
+  margin: 0;
+  // Inherit line-height from html so it can be set as a class on the root.
+  line-height: inherit;
+  color: var(--content-emphasis);
+
+  #root {
+    display: flex;
+    position: relative;
+    flex: 1;
+    max-width: 100vw;
+    width: 100%;
+  }
+
+  // When a modal is open, don't let the window scroll. Scroll containers in the
+  // modal are fine, but the entire window shouldn't scroll.
+  &:has(> #root > div[aria-modal="true"]) {
+    overflow: hidden;
+  }
+
+  @media (max-width: variables.$largeScreen) {
+    &:has(> #root.sidebar-open) {
+      overflow: hidden;
+    }
+  }
+}
+
+.text-size-inherit {
+  font-size: inherit;
+  line-height: inherit;
+}
+
+// None of the lucide icons should ever shrink!
+svg.lucide {
+  flex-shrink: 0;
+}
+
+:root {
+  --brand: #4E1AA0;
+  --brand-subtle: #5D1FC1;
+  --brand-muted: #9461E5;
+  --brand-faint: #AC84EB;
+  --brand-bright: #CFB9F4;
+  --brand-disabled: #b591ed;
+  --brand-focused: #3E157F;
+
+  /* --error-focused: #f87171; */
+  --error: #ef4444;
+
+  --destructive: #dc2626;
+  --destructive-disabled: #{color.adjust(#dc2626, $lightness: 25%)};
+  --destructive-subtle: #ef4444;
+
+  --success: #16a34a;
+  --warning: #ca8a04;
+
+  --amount-negative: #ef4444;
+  --amount-positive: #22c55e;
+
+  --blue: #3b82f6;
+  --blue-subtle: #60a5fa;
+
+  /* Progress bar colors (budget / goal / upload bars). */
+  --progress-track: #374151; /* gray-700 */
+  --progress-used: #2563eb; /* blue-600 */
+
+  --background: #19161f;
+  --background-subtle: #27272a;
+  --background-emphasis: #3f3f46;
+  --background-darker: #131118;
+  --background-active: #52525b;
+
+  --border: #3f3f46;
+  --border-subtle: #27272a;
+  /* For input fields, these two borders are used, string is normal border */
+  --border-hover: #a1a1aa;
+  --border-string: #71717a;
+
+  /* Content colors, used for test */
+  --content: #d4d4d8;
+  --content-muted: #52525b;
+  --content-subtle: #a1a1aa;
+  --content-placeholder: #9ca3af;
+  --content-disabled: #6b7280;
+  --content-emphasis: #fafafa;
+
+  /* Border radius large, ~8px */
+  --border-radius: 0.5rem;
+
+  /* Used for element outlines */
+  --outline-size: 2px;
+
+  /* Font weights */
+  --normal: 400;
+  --medium: 500;
+  --semibold: 600;
+  --bold: 700;
+
+  --bank-sidebar-width-static: #{16 * variables.$size};
+  --bank-sidebar-width: 0px;
+  --budget-sidebar-width: 0px;
+
+  @media (min-width: variables.$largeScreen) {
+    --bank-sidebar-width: #{16 * variables.$size};
+    --budget-sidebar-width: #{72 * variables.$size};
+  }
+
+
+}
+
+// Custom scrollbar styles
+::-webkit-scrollbar {
+    width: 16px;
+}
+
+::-webkit-scrollbar-track {
+    background-color: inherit;
+}
+
+::-webkit-scrollbar-thumb {
+    background-color: #3f3f46; /* zinc-700 */
+    border-radius: 20px;
+    border: 6px solid transparent;
+    background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background-color: #71717a; /* zinc-500 */
+}
+
+// Snap @monetr/notify's radius to monetr's standard. The package defaults this
+// inside a :where(...) selector with zero specificity, so a bare attribute
+// elector wins.
+[data-monetr-notifier-stack],
+[data-monetr-notification] {
+    --monetr-notification-radius: var(--border-radius);
+}

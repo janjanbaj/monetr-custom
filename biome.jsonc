@@ -1,0 +1,197 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.4.16/schema.json",
+  "vcs": {
+    "clientKind": "git",
+    "enabled": true,
+    "useIgnoreFile": true,
+    "defaultBranch": "origin/main"
+  },
+  "files": {
+    "includes": ["**", "!**/*.html"]
+  },
+  "formatter": {
+    "enabled": true,
+    "bracketSpacing": true,
+    "formatWithErrors": false,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineEnding": "lf",
+    "lineWidth": 120,
+    "attributePosition": "auto",
+    "includes": ["interface/**", "docs/**", "emails/src/**", "stories/**", "!**/*.html", "!**/*.svg", "!**/*.mdx"]
+  },
+  "assist": {
+    "actions": {
+      "source": {
+        "organizeImports": {
+          "level": "on",
+          "options": {
+            "groups": [
+              ["react", "react-dom"],
+              [
+                "@date-fns/tz",
+                "@ebay/nice-modal-react",
+                "@fontsource-variable/inter",
+                "@mui/**",
+                "@radix-ui/**",
+                "@react-email/**",
+                "@rstest/**",
+                "@sentry/**",
+                "@storybook/**",
+                "@tanstack/react-query",
+                "axios",
+                "class-variance-authority",
+                "cmdk",
+                "date-fns",
+                "downshift",
+                "formik",
+                "input-otp",
+                "lucide-react",
+                "react-day-picker",
+                "react-dropzone",
+                "react-google-recaptcha",
+                "react-number-format",
+                "react-plaid-link",
+                "react-qr-code",
+                "rrule",
+                "storybook/**",
+                "tailwind-merge",
+                "tailwindcss",
+                "tailwindcss-animate",
+                "tailwindcss/**",
+                "wouter"
+              ],
+              ":BLANK_LINE:",
+              [
+                // Testing libraries
+                "@testing-library/**",
+                "axios-mock-adapter",
+                "react-test-renderer"
+              ],
+              ":BLANK_LINE:",
+              ["@monetr/**"],
+              ":ALIAS:",
+              ":BLANK_LINE:",
+              ["./**"],
+              ":PATH:",
+              ":BLANK_LINE:",
+              ["**/*.scss", "**/*.css", "**/*.svg", "**/*.png", "**/*.jpg", "**/*.gif", "**/*.jpeg", "**/*.webp"],
+              ":BLANK_LINE:"
+            ]
+          }
+        },
+        "useSortedAttributes": {
+          "level": "on",
+          "options": {
+            "sortOrder": "natural"
+          }
+        }
+      }
+    }
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "recommended": true,
+      "a11y": {
+        "useKeyWithClickEvents": "off",
+        "useKeyWithMouseEvents": "off",
+        "noDistractingElements": "error",
+        "noInteractiveElementToNoninteractiveRole": "warn",
+        "noLabelWithoutControl": "warn",
+        "useValidAutocomplete": "error"
+      },
+      "correctness": {
+        "useExhaustiveDependencies": "warn",
+        "noUnusedVariables": "error",
+        "noUnusedImports": "error",
+        "noUnreachable": "error",
+        "noUndeclaredDependencies": "warn", // Mainly for storybook silliness
+        "noUndeclaredVariables": "off", // Doesn't work with jest :(
+        "useParseIntRadix": "error",
+        "useValidTypeof": "error",
+        "noNestedComponentDefinitions": "warn" // Need to fix this at some point
+      },
+      "complexity": {
+        "noForEach": "off",
+        "noThisInStatic": "off",
+        "noStaticOnlyClass": "off",
+        "noUselessFragments": "error",
+        "noArguments": "error",
+        "noEmptyTypeParameters": "error",
+        "noUselessCatch": "error",
+        "noUselessConstructor": "error"
+      },
+      "suspicious": {
+        "noShadowRestrictedNames": "error",
+        "noExplicitAny": "warn",
+        "noExtraNonNullAssertion": "warn",
+        "noUnknownAtRules": {
+          "level": "off",
+          "options": {
+            "ignore": ["apply", "function", "tailwind"]
+          }
+        }
+      },
+      "performance": {
+        "noDelete": "off"
+      },
+      "style": {
+        "useDefaultParameterLast": "off",
+        "noParameterAssign": "off",
+        "noNonNullAssertion": "off",
+        "useBlockStatements": "error",
+        "useConsistentCurlyBraces": "error",
+        "noRestrictedImports": {
+          "level": "warn",
+          "options": {
+            "paths": {}
+          }
+        }
+      },
+      "nursery": {}
+    },
+    "includes": [
+      "interface/**",
+      "docs/**",
+      "emails/src/**",
+      "stories/**",
+      "!**/*.html",
+      "!**/*.svg",
+      "!**/*.mdx",
+      "!**/*.css"
+    ]
+  },
+  "javascript": {
+    "formatter": {
+      "jsxQuoteStyle": "single",
+      "quoteProperties": "asNeeded",
+      "trailingCommas": "all",
+      "arrowParentheses": "asNeeded",
+      "bracketSpacing": true,
+      "bracketSameLine": false,
+      "quoteStyle": "single",
+      "attributePosition": "auto"
+    }
+  },
+  "css": {
+    "linter": {
+      "enabled": true
+    },
+    "formatter": {
+      "enabled": false
+    },
+    "parser": {
+      "cssModules": true,
+      "tailwindDirectives": true
+    },
+    "assist": {
+      "enabled": true
+    }
+  },
+  "json": {
+    "formatter": {
+      "trailingCommas": "none"
+    }
+  }
+}

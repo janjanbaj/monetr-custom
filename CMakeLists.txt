@@ -1,0 +1,405 @@
+cmake_minimum_required(VERSION 3.23)
+
+option(BUILD_SIMPLE_ICONS "Embed simple-icons into the final binary, used for providing icons for transactions." ON)
+option(BUILD_NOSIMD "Disable SIMD support at compile time." OFF)
+option(BUILD_CONTAINER_TAG_LATEST "Tag containers with latest when building them." ON)
+
+option(SIGN_RECURSIVE "Sign all referenced images recursively (covers each platform image of multi-arch builds)." OFF)
+option(SIGN_TLOG_UPLOAD "Upload cosign signatures to the Sigstore Rekor transparency log." ON)
+set(SIGN_CERT_IDENTITY_REGEX "^https://github.com/monetr/monetr/" CACHE STRING "OIDC certificate identity regex used to verify cosign signatures.")
+set(SIGN_OIDC_ISSUER "https://token.actions.githubusercontent.com" CACHE STRING "OIDC issuer URL used to verify cosign signatures.")
+
+option(TEST_RACE "Go tests should be run with the -race flag" ON)
+option(TEST_COVERAGE "Coverage data should be collected from tests" ON)
+option(TEST_USE_GOTESTSUM "Wrap test execution in gotestsum" OFF)
+option(TEST_SHORT "Exclude long running tests" ON)
+
+if (CMAKE_BUILD_TYPE STREQUAL "Release")
+  message(STATUS "Mode: Release")
+else()
+  message(STATUS "Mode: Debug")
+endif()
+
+# This makes it possible to support some other languages.
+# You'll find here we have the FindX files as well as some other ones.
+# This will make it so cmake looks here for some Find files.
+list(PREPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
+project(monetr Go)
+
+# Get the hostname for the build.
+if (WIN32)
+  set(HOME $ENV{USERPROFILE})
+  execute_process(COMMAND hostname OUTPUT_VARIABLE HOSTNAME OUTPUT_STRIP_TRAILING_WHITESPACE)
+else()
+  set(HOME $ENV{HOME})
+  execute_process(COMMAND uname -n OUTPUT_VARIABLE HOSTNAME OUTPUT_STRIP_TRAILING_WHITESPACE)
+endif()
+
+# monetr requires cgo in order to be built at this time, so if gcc is not present on the system then show a warning.
+find_package(Gcc REQUIRED)
+find_package(Git REQUIRED)
+
+set(DOCKER_MIN_VERSION "26.0.0")
+find_package(Docker QUIET)
+find_program(COSIGN_EXECUTABLE cosign)
+
+set(MONETR_PKG_ROOT github.com/monetr/monetr CACHE INTERNAL "Base go package for monetr.")
+
+# The UI tasks are split out into their own file.
+# Import this _after_ we have found all the packages above.
+include(NodeModules)
+include(GolangUtils)
+add_subdirectory("${CMAKE_SOURCE_DIR}/images")
+add_subdirectory("${CMAKE_SOURCE_DIR}/interface")
+add_subdirectory("${CMAKE_SOURCE_DIR}/emails")
+
+add_custom_target(
+  dependencies
+  DEPENDS dependencies.node_modules ${GO_MODULES}
+)
+
+if(DOCKER_EXECUTABLE)
+  message(STATUS "Container engine: Docker")
+  message(STATUS "  Container build targets will be enabled!")
+  include("${CMAKE_SOURCE_DIR}/cmake/development.cmake")
+
+  if(NOT BUILD_PLATFORMS)
+    set(BUILD_PLATFORMS "linux/amd64,linux/arm64")
+  endif()
+  message(STATUS "  Container will be built for platforms: ${BUILD_PLATFORMS}")
+
+  if(NOT "$ENV{CONTAINER_REGISTRY}" STREQUAL "")
+    set(CONTAINER_REGISTRY "$ENV{CONTAINER_REGISTRY}")
+  else()
+    set(CONTAINER_REGISTRY "ghcr.io/monetr/monetr" "docker.io/monetr/monetr" "quay.io/monetr/monetr")
+  endif()
+  set(CONTAINER_TAGS "$(CONTAINER_VERSION)")
+  if(BUILD_CONTAINER_TAG_LATEST)
+    list(APPEND CONTAINER_TAGS "latest")
+  endif()
+
+  set(CONTAINER_ARGS)
+  foreach(REGISTRY ${CONTAINER_REGISTRY})
+    foreach(TAG ${CONTAINER_TAGS})
+      list(APPEND CONTAINER_ARGS "-t" "${REGISTRY}:${TAG}")
+    endforeach()
+  endforeach()
+
+  set(DOCKER_CONTAINER ${CMAKE_BINARY_DIR}/docker-build-manifest.json)
+  add_custom_command(
+    OUTPUT ${DOCKER_CONTAINER}
+    BYPRODUCTS ${DOCKER_CONTAINER}
+    COMMENT "Building monetr container image"
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    DEPENDS
+      ${APP_GO_FILES}
+      ${APP_UI_FILES}
+      ${CMAKE_SOURCE_DIR}/Dockerfile
+      ${CMAKE_SOURCE_DIR}/package.json
+      ${CMAKE_SOURCE_DIR}/pnpm-lock.yaml
+      ${PUBLIC_FILES}
+      ${UI_CONFIG_FILES}
+    VERBATIM
+    COMMAND ${CMAKE_COMMAND} -E echo "-- Building monetr container: ${CONTAINER_REGISTRY} - ${CONTAINER_TAGS}"
+    COMMAND ${DOCKER_EXECUTABLE} buildx build
+        -f ${CMAKE_SOURCE_DIR}/Dockerfile
+        --platform ${BUILD_PLATFORMS}
+        --build-arg GOFLAGS=-tags=icons,simple_icons
+        --build-arg RELEASE=$(RELEASE_VERSION)
+        --build-arg REVISION=$(RELEASE_REVISION)
+        --build-arg BUILD_HOST=${HOSTNAME}
+        --metadata-file ${DOCKER_CONTAINER}
+        --label "index:org.opencontainers.image.url=https://monetr.app"
+        --label "index:org.opencontainers.image.source=https://github.com/monetr/monetr"
+        --label "index:org.opencontainers.image.authors=elliot.courant@monetr.app"
+        --label "index:org.opencontainers.image.vendor=monetr"
+        --label "index:org.opencontainers.image.licenses=FSL-1.1-MIT"
+        --label "index:org.opencontainers.image.description=monetr's budgeting application"
+        --label "index:org.opencontainers.image.version=$(RELEASE_VERSION)"
+        --label "index:org.opencontainers.image.revision=$(RELEASE_REVISION)"
+        --annotation "index:org.opencontainers.image.url=https://monetr.app"
+        --annotation "index:org.opencontainers.image.source=https://github.com/monetr/monetr"
+        --annotation "index:org.opencontainers.image.authors=elliot.courant@monetr.app"
+        --annotation "index:org.opencontainers.image.vendor=monetr"
+        --annotation "index:org.opencontainers.image.licenses=FSL-1.1-MIT"
+        --annotation "index:org.opencontainers.image.description=monetr's budgeting application"
+        --annotation "index:org.opencontainers.image.version=$(RELEASE_VERSION)"
+        --annotation "index:org.opencontainers.image.revision=$(RELEASE_REVISION)"
+        ${CONTAINER_ARGS}
+        ${CMAKE_SOURCE_DIR}
+  )
+  add_custom_target(
+    build.container.docker
+    DEPENDS ${DOCKER_CONTAINER}
+  )
+
+  set(DOCKER_CONTAINER_PUSH ${CMAKE_BINARY_DIR}/docker-container-push-manifest.json)
+  add_custom_command(
+    OUTPUT ${DOCKER_CONTAINER_PUSH}
+    BYPRODUCTS ${DOCKER_CONTAINER_PUSH}
+    COMMENT "Building monetr container image"
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    DEPENDS
+      ${APP_GO_FILES}
+      ${APP_UI_FILES}
+      ${CMAKE_SOURCE_DIR}/Dockerfile
+      ${CMAKE_SOURCE_DIR}/package.json
+      ${CMAKE_SOURCE_DIR}/pnpm-lock.yaml
+      ${PUBLIC_FILES}
+      ${UI_CONFIG_FILES}
+    VERBATIM
+    COMMAND ${CMAKE_COMMAND} -E echo "-- Building monetr container: ${CONTAINER_REGISTRY} - ${CONTAINER_TAGS}"
+    COMMAND ${DOCKER_EXECUTABLE} buildx build
+        --push
+        -f ${CMAKE_SOURCE_DIR}/Dockerfile
+        --platform ${BUILD_PLATFORMS}
+        --build-arg GOFLAGS=-tags=icons,simple_icons
+        --build-arg RELEASE=$(RELEASE_VERSION)
+        --build-arg REVISION=$(RELEASE_REVISION)
+        --build-arg BUILD_HOST=${HOSTNAME}
+        --metadata-file ${DOCKER_CONTAINER_PUSH}
+        --label "index:org.opencontainers.image.url=https://monetr.app"
+        --label "index:org.opencontainers.image.source=https://github.com/monetr/monetr"
+        --label "index:org.opencontainers.image.authors=elliot.courant@monetr.app"
+        --label "index:org.opencontainers.image.vendor=monetr"
+        --label "index:org.opencontainers.image.licenses=FSL-1.1-MIT"
+        --label "index:org.opencontainers.image.description=monetr's budgeting application"
+        --label "index:org.opencontainers.image.version=$(RELEASE_VERSION)"
+        --label "index:org.opencontainers.image.revision=$(RELEASE_REVISION)"
+        --annotation "index:org.opencontainers.image.url=https://monetr.app"
+        --annotation "index:org.opencontainers.image.source=https://github.com/monetr/monetr"
+        --annotation "index:org.opencontainers.image.authors=elliot.courant@monetr.app"
+        --annotation "index:org.opencontainers.image.vendor=monetr"
+        --annotation "index:org.opencontainers.image.licenses=FSL-1.1-MIT"
+        --annotation "index:org.opencontainers.image.description=monetr's budgeting application"
+        --annotation "index:org.opencontainers.image.version=$(RELEASE_VERSION)"
+        --annotation "index:org.opencontainers.image.revision=$(RELEASE_REVISION)"
+        ${CONTAINER_ARGS}
+        ${CMAKE_SOURCE_DIR}
+  )
+
+  add_custom_target(
+    build.container.docker.push
+    DEPENDS ${DOCKER_CONTAINER_PUSH}
+  )
+
+  if(COSIGN_EXECUTABLE)
+    message(STATUS "  Container signing engine: cosign (${COSIGN_EXECUTABLE})")
+
+    # CMake's add_custom_command(COMMAND ...) splits list-valued args on the
+    # ; separator, which would expand a multi-registry list into separate
+    # cmake -P arguments. Join into a comma-separated string so the script
+    # gets a single -DREGISTRIES=... arg and re-splits on , at runtime.
+    list(JOIN CONTAINER_REGISTRY "," CONTAINER_REGISTRY_CSV)
+
+    set(DOCKER_CONTAINER_DIGEST ${CMAKE_BINARY_DIR}/docker-container-push.digest)
+    set(DOCKER_CONTAINER_SIGNING_CONFIG ${CMAKE_BINARY_DIR}/cosign-signing-config-no-tlog.json)
+    set(DOCKER_CONTAINER_SIGN_STAMP ${CMAKE_BINARY_DIR}/docker-container-sign.stamp)
+    add_custom_command(
+      OUTPUT ${DOCKER_CONTAINER_SIGN_STAMP}
+      BYPRODUCTS ${DOCKER_CONTAINER_SIGN_STAMP} ${DOCKER_CONTAINER_DIGEST} ${DOCKER_CONTAINER_SIGNING_CONFIG}
+      COMMENT "Signing monetr container images with cosign"
+      WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+      DEPENDS ${DOCKER_CONTAINER_PUSH}
+      VERBATIM
+      COMMAND ${CMAKE_COMMAND}
+        "-DMETADATA_FILE=${DOCKER_CONTAINER_PUSH}"
+        "-DREGISTRIES=${CONTAINER_REGISTRY_CSV}"
+        "-DCOSIGN_EXECUTABLE=${COSIGN_EXECUTABLE}"
+        "-DSIGN_RECURSIVE=${SIGN_RECURSIVE}"
+        "-DSIGN_TLOG_UPLOAD=${SIGN_TLOG_UPLOAD}"
+        "-DDIGEST_FILE=${DOCKER_CONTAINER_DIGEST}"
+        "-DSIGNING_CONFIG_FILE=${DOCKER_CONTAINER_SIGNING_CONFIG}"
+        -P ${CMAKE_SOURCE_DIR}/cmake/scripts/CosignSign.cmake
+      COMMAND ${CMAKE_COMMAND} -E touch ${DOCKER_CONTAINER_SIGN_STAMP}
+    )
+    add_custom_target(
+      build.container.docker.sign
+      DEPENDS ${DOCKER_CONTAINER_SIGN_STAMP}
+    )
+
+    set(DOCKER_CONTAINER_VERIFY_STAMP ${CMAKE_BINARY_DIR}/docker-container-verify.stamp)
+    add_custom_command(
+      OUTPUT ${DOCKER_CONTAINER_VERIFY_STAMP}
+      BYPRODUCTS ${DOCKER_CONTAINER_VERIFY_STAMP}
+      COMMENT "Verifying monetr container image signatures with cosign"
+      WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+      DEPENDS ${DOCKER_CONTAINER_SIGN_STAMP}
+      VERBATIM
+      COMMAND ${CMAKE_COMMAND}
+        "-DMETADATA_FILE=${DOCKER_CONTAINER_PUSH}"
+        "-DREGISTRIES=${CONTAINER_REGISTRY_CSV}"
+        "-DCOSIGN_EXECUTABLE=${COSIGN_EXECUTABLE}"
+        "-DSIGN_TLOG_UPLOAD=${SIGN_TLOG_UPLOAD}"
+        "-DSIGN_CERT_IDENTITY_REGEX=${SIGN_CERT_IDENTITY_REGEX}"
+        "-DSIGN_OIDC_ISSUER=${SIGN_OIDC_ISSUER}"
+        -P ${CMAKE_SOURCE_DIR}/cmake/scripts/CosignVerify.cmake
+      COMMAND ${CMAKE_COMMAND} -E touch ${DOCKER_CONTAINER_VERIFY_STAMP}
+    )
+    add_custom_target(
+      build.container.docker.verify
+      DEPENDS ${DOCKER_CONTAINER_VERIFY_STAMP}
+    )
+  else()
+    message(STATUS "  cosign not found; container signing targets will be unavailable")
+  endif()
+endif()
+
+if(NOT DEFINED ENV{CI})
+  add_custom_target(lint
+    COMMENT "Linting monetr code base..."
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    DEPENDS tools.biome
+    COMMAND ${CMAKE_Go_COMPILER} fmt ./...
+    # Check all of the files that have changed since this commit, this is when the linting was introduced.
+    COMMAND ${BIOME_EXECUTABLE} check --write --max-diagnostics=1000 --since=6173df2df49e0754f0a2b902a433c712e034e1e2 --changed
+  )
+else()
+  add_custom_target(lint
+    COMMENT "Linting monetr code base..."
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    DEPENDS tools.biome
+    # Check all of the files that have changed since this commit, this is when the linting was introduced.
+    COMMAND ${BIOME_EXECUTABLE} ci --reporter=github --max-diagnostics=1000 --since=6173df2df49e0754f0a2b902a433c712e034e1e2 --changed
+  )
+endif()
+
+add_custom_target(lint-all
+  COMMENT "Linting monetr code base..."
+  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+  DEPENDS tools.biome
+  COMMAND ${CMAKE_Go_COMPILER} fmt ./...
+  COMMAND ${BIOME_EXECUTABLE} check --write --max-diagnostics=1000
+)
+
+add_custom_target(interface.typecheck
+  COMMENT "Type checking monetr's frontend code..."
+  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+  DEPENDS tools.tsc
+  COMMAND ${TSC_EXECUTABLE} --noEmit --pretty
+  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/interface
+)
+
+################################################################################
+#                                     TESTING                                  #
+################################################################################
+
+enable_testing()
+option(BUILD_TESTING "Build the testing tree." OFF)
+
+include(GolangTestUtils)
+
+if(BUILD_TESTING)
+  if(CMAKE_Go_COMPILER)
+    execute_process(
+      COMMAND ${CMAKE_Go_COMPILER} run ${CMAKE_SOURCE_DIR}/cmake/find_tests.go ${CMAKE_SOURCE_DIR}/server
+      OUTPUT_VARIABLE GOLANG_TEST_LIST
+      OUTPUT_STRIP_TRAILING_WHITESPACE
+      WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    )
+    set(GOLANG_TEST_LIST "${GOLANG_TEST_LIST}" CACHE STRING "All Golang unit tests in json format." FORCE)
+
+    add_test(
+      NAME migrate.db
+      COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} -t development.migrate
+      WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    )
+    set_tests_properties(migrate.db PROPERTIES FIXTURES_SETUP DB)
+    set_property(
+      TEST migrate.db
+      PROPERTY LABELS "bootstrap"
+    )
+
+    # If this test fails that means you need to run `go mod tidy`.
+    add_test(
+      NAME go.mod.tidy
+      COMMAND ${CMAKE_Go_COMPILER} mod tidy --diff
+      WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    )
+    set_property(
+      TEST go.mod.tidy
+      PROPERTY LABELS "bootstrap"
+    )
+  else()
+    message(STATUS "Go tests will not be run since Go installation could not be found.")
+  endif()
+
+  add_test(
+    NAME ui.dependencies
+    COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} -t dependencies.node_modules
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+  )
+  set_tests_properties(ui.dependencies PROPERTIES FIXTURES_SETUP node_modules DEPENDS ${PNPM_EXECUTABLE})
+  set_property(
+    TEST ui.dependencies
+    PROPERTY LABELS "bootstrap"
+  )
+  set(INTERFACE_TEST_DIRECTORY ${CMAKE_BINARY_DIR}/tests/interface)
+  set(INTERFACE_COVERAGE_DIRECTORY ${INTERFACE_TEST_DIRECTORY}/coverage)
+  file(MAKE_DIRECTORY ${INTERFACE_TEST_DIRECTORY})
+  file(MAKE_DIRECTORY ${INTERFACE_COVERAGE_DIRECTORY})
+
+  set(INTERFACE_TEST_ARGS "run" "--config=${CMAKE_SOURCE_DIR}/interface/rstest.config.ts")
+  if(TEST_COVERAGE)
+    list(APPEND INTERFACE_TEST_ARGS "--coverage.enabled")
+  endif()
+
+  add_test(
+    NAME interface
+    COMMAND ${RSTEST_EXECUTABLE} ${INTERFACE_TEST_ARGS}
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/interface
+  )
+  set_tests_properties(interface PROPERTIES
+    FIXTURES_REQUIRED node_modules
+    TIMEOUT 120
+    LABELS "interface"
+    PROCESSORS 4
+  )
+  if(TEST_COVERAGE)
+    set_property(
+      TEST interface
+      PROPERTY ENVIRONMENT "RSTEST_COVERAGE_DIR=${INTERFACE_COVERAGE_DIRECTORY}"
+    )
+  endif()
+
+  add_test(
+    NAME interface.typecheck
+    COMMAND ${TSC_EXECUTABLE} --noEmit --pretty
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/interface
+  )
+  set_tests_properties(interface.typecheck PROPERTIES
+    FIXTURES_REQUIRED node_modules
+    TIMEOUT 120
+    LABELS "interface"
+    PROCESSORS 2
+  )
+
+  # add_test(
+  #   NAME renovate.validate
+  #   COMMAND ${RENOVATE_CONFIG_VALIDATOR_EXECUTABLE} --strict
+  #   WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+  # )
+  # set_tests_properties(renovate.validate PROPERTIES
+  #   FIXTURES_REQUIRED node_modules
+  #   FIXTURES_SETUP ui.dependencies
+  #   TIMEOUT 60
+  # )
+  # set_property(
+  #   TEST renovate.validate
+  #   PROPERTY LABELS "renovate"
+  # )
+endif()
+
+file(GLOB_RECURSE SUB_PACKAGES RELATIVE ${CMAKE_SOURCE_DIR} "${CMAKE_SOURCE_DIR}/server/*CMakeLists.txt")
+# # Loop through the files and get their directories
+foreach(SUB_PACKAGE IN LISTS SUB_PACKAGES)
+  get_filename_component(DIR ${SUB_PACKAGE} DIRECTORY)
+  add_subdirectory(${DIR})
+endforeach()
+
+
+# In order for documentation tests to work this has to be after the tests are setup.
+add_subdirectory("${CMAKE_SOURCE_DIR}/docs")
+
+# Prevent caching of this value
+unset(BUILD_TESTING)

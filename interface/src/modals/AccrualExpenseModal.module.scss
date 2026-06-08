@@ -1,0 +1,281 @@
+@use '@monetr/interface/variables';
+
+.modal {
+  @media (min-width: variables.$smallScreen) {
+    max-width: 160 * variables.$size;
+  }
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 4 * variables.$size;
+  padding: 2 * variables.$size;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.heading {
+  color: var(--content-emphasis);
+}
+
+.closeBtn {
+  padding: variables.$size;
+  height: auto;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--background-subtle);
+  border: 1px solid var(--border);
+
+  &:hover {
+    background-color: var(--background-darker);
+  }
+}
+
+.meta {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 3 * variables.$size;
+  background-color: var(--background-darker);
+  border: 1px solid var(--border);
+  border-radius: 2 * variables.$size;
+  padding: 4 * variables.$size;
+}
+
+.metaItem {
+  display: flex;
+  flex-direction: column;
+  gap: variables.$size;
+}
+
+.metaLabel {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--content-subtle);
+}
+
+.metaValue {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--content-emphasis);
+}
+
+.description {
+  background-color: var(--background-subtle);
+  border-left: 4px solid var(--brand);
+  border-radius: variables.$size;
+  padding: 3 * variables.$size 4 * variables.$size;
+  margin-top: -2 * variables.$size;
+}
+
+.usageSection {
+  display: flex;
+  flex-direction: column;
+  gap: 2 * variables.$size;
+}
+
+.sectionTitle {
+  color: var(--content-emphasis);
+}
+
+.sectionSubtitle {
+  margin-bottom: 2 * variables.$size;
+}
+
+.daysList {
+  display: flex;
+  flex-direction: column;
+  gap: 2 * variables.$size;
+  max-height: 70 * variables.$size;
+  overflow-y: auto;
+  padding-right: variables.$size;
+  border: 1px solid var(--border);
+  border-radius: 2 * variables.$size;
+  background-color: var(--background-darker);
+
+  /* Scrollbar Customization */
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 3px;
+  }
+  &::-webkit-scrollbar-thumb:hover {
+    background: var(--brand-muted);
+  }
+}
+
+.dayRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 3 * variables.$size 4 * variables.$size;
+  border-bottom: 1px solid var(--border);
+  transition: background-color 0.2s ease;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &:hover {
+    background-color: var(--background-subtle);
+  }
+}
+
+.exemptedRow {
+  background-color: rgba(255, 255, 255, 0.02);
+  opacity: 0.7;
+  text-decoration: line-through;
+}
+
+.dayInfo {
+  display: flex;
+  align-items: center;
+  gap: 2 * variables.$size;
+}
+
+.dayIcon {
+  color: var(--content-subtle);
+}
+
+.dayDate {
+  font-weight: 500;
+  color: var(--content-emphasis);
+}
+
+.badgeExempt {
+  font-size: 0.7rem;
+  font-weight: 700;
+  background-color: rgba(255, 0, 0, 0.15);
+  color: #ff4d4d;
+  padding: 0.5 * variables.$size 1.5 * variables.$size;
+  border-radius: variables.$size;
+  text-decoration: none !important;
+  display: inline-block;
+}
+
+.badgeCustom {
+  font-size: 0.7rem;
+  font-weight: 700;
+  background-color: rgba(var(--brand), 0.15);
+  color: var(--brand-bright);
+  padding: 0.5 * variables.$size 1.5 * variables.$size;
+  border-radius: variables.$size;
+  display: inline-block;
+}
+
+.dayActions {
+  display: flex;
+  align-items: center;
+  gap: 3 * variables.$size;
+}
+
+.dayAmount {
+  font-weight: 700;
+  color: var(--content-emphasis);
+  font-size: 0.95rem;
+}
+
+.actionGroup {
+  display: flex;
+  gap: variables.$size;
+}
+
+.actionBtn {
+  font-size: 0.75rem;
+  padding: variables.$size 2 * variables.$size;
+  height: auto;
+}
+
+.editForm {
+  display: flex;
+  flex-direction: column;
+  gap: 2 * variables.$size;
+  background-color: var(--background-subtle);
+  border: 1px solid var(--border);
+  border-radius: variables.$size;
+  padding: 2 * variables.$size;
+  width: 100%;
+  max-width: 80 * variables.$size;
+}
+
+.inputRow {
+  display: flex;
+  align-items: center;
+  background-color: var(--background-darker);
+  border: 1px solid var(--border);
+  border-radius: variables.$size;
+  padding: variables.$size 2 * variables.$size;
+}
+
+.dollarSign {
+  color: var(--content-subtle);
+  margin-right: variables.$size;
+  font-weight: 600;
+}
+
+.amountInput {
+  background: transparent;
+  border: none;
+  color: var(--content-emphasis);
+  font-weight: 600;
+  outline: none;
+  width: 100%;
+}
+
+.checkboxRow {
+  display: flex;
+  align-items: center;
+  gap: 2 * variables.$size;
+  cursor: pointer;
+  user-select: none;
+  padding: variables.$size 0;
+}
+
+.checkbox {
+  color: var(--brand-bright);
+}
+
+.checkboxLabel {
+  font-size: 0.75rem;
+  color: var(--content-subtle);
+}
+
+.editActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: variables.$size;
+}
+
+.miniBtn {
+  padding: variables.$size;
+  height: auto;
+  border-radius: variables.$size;
+}
+
+.actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 2 * variables.$size;
+  border-top: 1px solid var(--border);
+  padding-top: 4 * variables.$size;
+  margin-top: 2 * variables.$size;
+}
+
+.deleteBtn {
+  display: flex;
+  align-items: center;
+  gap: 2 * variables.$size;
+}

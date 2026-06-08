@@ -1,0 +1,21 @@
+@use '@monetr/interface/variables';
+
+.optionRow {
+  display: flex;
+  justify-content: space-between;
+}
+
+.spendingName {
+  display: flex;
+  min-width: 0;
+  gap: 2 * variables.$size;
+}
+
+.badges {
+  display: flex;
+  gap: 2 * variables.$size;
+}
+
+.iconBadge {
+  max-height: 24px;
+}

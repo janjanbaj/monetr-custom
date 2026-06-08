@@ -1,0 +1,3 @@
+The plan is to extend the current project to enable accrual accounting for expense occured specifically I am interested in seeing how things that I have bought in bulk in advanced can be recognized as expense when I used them. The major feature of this budgeting system will be a calendar where i can interactively drag and drop, extend expense items such as subscriptions, large quantities of rice, toiletries, etc such that I know how much I have actually used up. 
+
+The goal is to extend the current system of monetr to accomodate for this.

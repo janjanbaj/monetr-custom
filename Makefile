@@ -1,0 +1,168 @@
+.SUFFIXES:
+MAKEFLAGS += --no-print-directory
+MAKEFLAGS += --no-builtin-rules
+
+MAKEFILE_PATH := $(abspath $(lastword $(MAKEFILE_LIST)))
+PWD := $(dir $(MAKEFILE_PATH))
+
+RELEASE ?= $(shell git describe --tag --dirty)
+REVISION ?= $(shell git rev-parse HEAD)
+CONTAINER_RELEASE ?= $(RELEASE:v%=%)
+
+ifeq ($(OS),Windows_NT)
+    # This block will be executed if OS is Windows
+    TIME := $(shell powershell -command "[DateTime]::UtcNow.ToString('yyyy-MM-ddTHH:mm:ssZ')")
+else
+    # This block will be executed if OS is not Windows
+    TIME := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
+endif
+
+ifneq ("$(wildcard $(PWD)/.cmakepreset)","")
+	CMAKE_PRESET ?= $(shell cat $(PWD)/.cmakepreset)
+endif
+
+ifneq ("$(wildcard $(HOME)/.monetr/development.env)","")
+	include $(HOME)/.monetr/development.env
+	export
+endif
+
+ifndef CI
+	CMAKE_PRESET ?= default
+	CONCURRENCY ?= 8
+else
+	CMAKE_PRESET ?= release
+	CONCURRENCY ?= 4
+endif
+
+ifdef DEBUG
+	CMAKE_OPTIONS += --debug-output --log-level=DEBUG
+	BUILD_ARGS += -v
+	CONCURRENCY = 1
+endif
+
+ifdef MONETR_BUILD_TYPE
+	CMAKE_OPTIONS += -DMONETR_BUILD_TYPE=$(MONETR_BUILD_TYPE)
+endif
+
+export RELEASE_VERSION=$(RELEASE)
+export CONTAINER_VERSION=$(CONTAINER_RELEASE)
+export RELEASE_REVISION=$(REVISION)
+export BUILD_TIME=$(TIME)
+
+default: monetr
+
+CMAKE_CONFIGURATION_DIRECTORY=build
+# cmake -S . -B $(CMAKE_CONFIGURATION_DIRECTORY) -G $(GENERATOR) $(CMAKE_OPTIONS) $(CMAKE_ARGS)
+
+.PHONY: $(CMAKE_CONFIGURATION_DIRECTORY)
+$(CMAKE_CONFIGURATION_DIRECTORY): CMakeLists.txt CMakePresets.json Makefile
+	cmake --preset $(CMAKE_PRESET) $(CMAKE_OPTIONS)
+
+clean:
+	-@$(MAKE) shutdown CMAKE_OPTIONS="$(CMAKE_OPTIONS) -DBUILD_TESTING=OFF"
+	-cmake --build $(CMAKE_CONFIGURATION_DIRECTORY) -t clean $(BUILD_ARGS)
+	-cmake -E remove_directory $(CMAKE_CONFIGURATION_DIRECTORY) $(BUILD_ARGS)
+
+dependencies: | $(CMAKE_CONFIGURATION_DIRECTORY)
+	+cmake --build $(CMAKE_CONFIGURATION_DIRECTORY) -t dependencies $(BUILD_ARGS)
+
+deps: dependencies
+
+monetr: | $(CMAKE_CONFIGURATION_DIRECTORY)
+	+cmake --build $(CMAKE_CONFIGURATION_DIRECTORY) -t build.monetr $(BUILD_ARGS)
+
+monetr-release:
+	+$(MAKE) monetr -B CMAKE_PRESET=release
+
+release: monetr-release
+
+interface: $(CMAKE_CONFIGURATION_DIRECTORY)
+	+cmake --build $(CMAKE_CONFIGURATION_DIRECTORY) -t build.interface $(BUILD_ARGS)
+
+.PHONY: docs
+docs: | $(CMAKE_CONFIGURATION_DIRECTORY)
+	+cmake --build $(CMAKE_CONFIGURATION_DIRECTORY) -t build.docs $(BUILD_ARGS)
+
+email: | $(CMAKE_CONFIGURATION_DIRECTORY)
+	+cmake --build $(CMAKE_CONFIGURATION_DIRECTORY) -t build.email $(BUILD_ARGS)
+
+migrate: | $(CMAKE_CONFIGURATION_DIRECTORY)
+	cmake --build $(CMAKE_CONFIGURATION_DIRECTORY) -t development.migrate $(BUILD_ARGS)
+
+# If the user provides a pattern, then pass that through to CTest
+ifdef PATTERN
+PATTERN_ARG=-R $(PATTERN)
+endif
+
+# Optional: SHARDS=N SHARD=i runs the i-th of N shards via ctest's -I flag.
+# When set, the per-shard coverage merge is skipped; codecov merges server-side.
+SHARD ?=
+SHARDS ?=
+ifneq ($(SHARDS),)
+SHARD_ARG=-I $(SHARD),,$(SHARDS)
+JUNIT_SUFFIX=-$(SHARD)
+SKIP_COVERAGE_MERGE=1
+else
+JUNIT_SUFFIX=
+endif
+
+test:
+	cmake --preset testing $(CMAKE_OPTIONS)
+	ctest --test-dir $(CMAKE_CONFIGURATION_DIRECTORY) --no-tests=error --output-on-failure --output-junit $(PWD)$(CMAKE_CONFIGURATION_DIRECTORY)/junit$(JUNIT_SUFFIX).xml -j $(CONCURRENCY) $(PATTERN_ARG) $(SHARD_ARG)
+ifndef SKIP_COVERAGE_MERGE
+	cmake -P cmake/scripts/MergeGoCoverage.cmake
+endif
+
+lint: | $(CMAKE_CONFIGURATION_DIRECTORY)
+	cmake --build $(CMAKE_CONFIGURATION_DIRECTORY) -t lint $(BUILD_ARGS)
+
+lint-all: | $(CMAKE_CONFIGURATION_DIRECTORY)
+	cmake --build $(CMAKE_CONFIGURATION_DIRECTORY) -t lint-all $(BUILD_ARGS)
+
+typecheck: | $(CMAKE_CONFIGURATION_DIRECTORY)
+	cmake --build $(CMAKE_CONFIGURATION_DIRECTORY) -t interface.typecheck $(BUILD_ARGS)
+
+develop: | $(CMAKE_CONFIGURATION_DIRECTORY)
+	cmake --build $(CMAKE_CONFIGURATION_DIRECTORY) -t development.monetr.up $(BUILD_ARGS)
+
+develop-lite: | $(CMAKE_CONFIGURATION_DIRECTORY)
+	cmake --build $(CMAKE_CONFIGURATION_DIRECTORY) -t development.lite $(BUILD_ARGS)
+
+develop-docs: | $(CMAKE_CONFIGURATION_DIRECTORY)
+	cmake --build $(CMAKE_CONFIGURATION_DIRECTORY) -t development.documentation.up $(BUILD_ARGS)
+
+develop-email: | $(CMAKE_CONFIGURATION_DIRECTORY)
+	cmake --build $(CMAKE_CONFIGURATION_DIRECTORY) -t development.email $(BUILD_ARGS)
+
+logs: | $(CMAKE_CONFIGURATION_DIRECTORY)
+	cmake --build $(CMAKE_CONFIGURATION_DIRECTORY) -t development.logs $(BUILD_ARGS)
+
+restart: | $(CMAKE_CONFIGURATION_DIRECTORY)
+	cmake --build $(CMAKE_CONFIGURATION_DIRECTORY) -t development.restart $(BUILD_ARGS)
+
+shell: | $(CMAKE_CONFIGURATION_DIRECTORY)
+	cmake --build $(CMAKE_CONFIGURATION_DIRECTORY) -t development.shell $(BUILD_ARGS)
+
+sql-shell: | $(CMAKE_CONFIGURATION_DIRECTORY)
+	cmake --build $(CMAKE_CONFIGURATION_DIRECTORY) -t development.shell.sql $(BUILD_ARGS)
+
+redis-shell: | $(CMAKE_CONFIGURATION_DIRECTORY)
+	cmake --build $(CMAKE_CONFIGURATION_DIRECTORY) -t development.shell.redis $(BUILD_ARGS)
+
+shutdown: | $(CMAKE_CONFIGURATION_DIRECTORY)
+	cmake --build $(CMAKE_CONFIGURATION_DIRECTORY) -t development.down $(BUILD_ARGS)
+
+container: | $(CMAKE_CONFIGURATION_DIRECTORY)
+	cmake --build $(CMAKE_CONFIGURATION_DIRECTORY) -t build.container.docker $(BUILD_ARGS)
+
+container-push: $(CMAKE_CONFIGURATION_DIRECTORY)
+	cmake --build $(CMAKE_CONFIGURATION_DIRECTORY) -t build.container.docker.push $(BUILD_ARGS)
+
+sign-container: $(CMAKE_CONFIGURATION_DIRECTORY)
+	cmake --build $(CMAKE_CONFIGURATION_DIRECTORY) -t build.container.docker.sign $(BUILD_ARGS)
+
+verify-container: $(CMAKE_CONFIGURATION_DIRECTORY)
+	cmake --build $(CMAKE_CONFIGURATION_DIRECTORY) -t build.container.docker.verify $(BUILD_ARGS)
+
+images: $(CMAKE_CONFIGURATION_DIRECTORY)
+	cmake --build $(CMAKE_CONFIGURATION_DIRECTORY) -t images $(BUILD_ARGS)

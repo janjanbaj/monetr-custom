@@ -1,0 +1,180 @@
+@use '@monetr/interface/mixins';
+@use '@monetr/interface/variables';
+
+.button {
+  font-weight: var(--semibold);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: variables.$size;
+  border-radius: var(--border-radius);
+
+
+  padding-left: 3 * variables.$size;
+  padding-right: 3 * variables.$size;
+  padding-top: 1.5 * variables.$size;
+  padding-bottom: 1.5 * variables.$size;
+
+  &:disabled, &[aria-disabled="true"] {
+    pointer-events: none;
+  };
+
+  &:focus {
+    outline-style: none;
+  }
+
+  &:focus-visible {
+    outline-style: solid;
+    outline-width: var(--outline-size);
+    outline-offset: var(--outline-size);
+  }
+
+  &:enabled:active {
+    filter: brightness(1.1);
+  }
+
+  /* Any child icons of this component should have this style */
+  svg {
+    width: 4 * variables.$size;
+    height: 4 * variables.$size;
+    pointer-events: none;
+  }
+}
+
+.primary {
+  background-color: var(--brand);
+  color: var(--content-emphasis);
+
+  &:enabled:hover {
+    background-color: var(--brand-subtle);
+  }
+
+  &:disabled, &[aria-disabled="true"] {
+    background-color: var(--brand-disabled);
+  }
+
+  &:focus-visible {
+    outline-color: var(--brand-focused);
+  }
+}
+
+.secondary {
+  background-color: var(--background-subtle);
+  color: var(--content-emphasis);
+
+  --ring-color: var(--border);
+  --ring-size: 1px;
+  @include mixins.inset-ring;
+
+  &:disabled, &[aria-disabled="true"] {
+    --ring-color: var(--border-subtle);
+    --ring-size: 1px;
+    color: var(--content-subtle)
+  }
+
+  &:enabled:hover {
+    background-color: var(--background-emphasis);
+  }
+
+  &:focus-visible {
+    /* weird to use this but its the right color */
+    outline-color: var(--background-emphasis);
+  }
+}
+
+.outlinend {
+  --ring-color: var(--border);
+  --ring-size: 1px;
+  @include mixins.inset-ring;
+  color: var(--content-emphasis);
+
+  &:enabled {
+    &:focus-visible, &:hover {
+      --ring-color: var(--brand);
+      --ring-size: 2px;
+    }
+  }
+
+  &:disabled, &[aria-disabled="true"] {
+    --ring-color: var(--border-subtle);
+    color: var(--content-muted);
+  }
+}
+
+.destructive {
+  background-color: var(--destructive);
+  color: var(--content-emphasis);
+
+  &:disabled {
+    background-color: var(--destructive-disabled);
+  }
+
+  &:enabled:hover {
+    background-color: var(--destructive-subtle);
+  }
+
+  &:focus-visible {
+    outline-color: var(--destructive);
+  }
+}
+
+.text {
+  color: var(--content-emphasis);
+
+  &:enabled:hover {
+    background-color: var(--background-emphasis);
+  }
+
+  &:disabled, &[aria-disabled="true"] {
+    color: var(--content-muted);
+  }
+
+  &:focus-visible {
+    outline-color: var(--brand-focused);
+  }
+}
+
+.calendar {
+  height: 8 * variables.$size;
+  width: 8 * variables.$size;
+  background-color: transparent;
+  color: var(--content-emphasis);
+  padding: 0px;
+  opacity: 50%;
+
+  --ring-color: var(--border);
+  --ring-size: 1px;
+  @include mixins.inset-ring;
+
+  &:enabled {
+    &:focus-visible, &:hover {
+      --ring-color: var(--brand);
+      --ring-size: 2px;
+      opacity: 100%;
+    }
+  }
+
+  &:disabled, &[aria-disabled="true"] {
+    --ring-color: var(--border-subtle);
+    color: var(--content-muted);
+  }
+
+  svg {
+    height: 4 * variables.$size;
+    width: 4 * variables.$size;
+  }
+}
+
+.sizeDefault {
+  @include mixins.text-small;
+  height: 8 * variables.$size;
+}
+
+.sizeSelect {
+  // Select component buttons are the same size as form inputs.
+  height: 9.5 * variables.$size;
+}
+
+.sizeMedium {
+  min-height: 10 * variables.$size;
+}

@@ -1,0 +1,28 @@
+@use '@monetr/interface/variables';
+
+.sidebarPaddingLayout {
+  min-height: 100vh;
+  display: flex;
+}
+
+:global(.sidebar-open) {
+  .sidebarPaddingLayout {
+    min-width: 0px;
+    padding-left: var(--bank-sidebar-width);
+    width: 100%;
+  }
+}
+
+:global(.sidebar-close) {
+  .sidebarPaddingLayout {
+    min-width: 0px;
+    width: 100%;
+  }
+
+  @media (min-width: variables.$largeScreen) {
+    .sidebarPaddingLayout {
+      padding-left: var(--bank-sidebar-width);
+    }
+  }
+}
+

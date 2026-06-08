@@ -1,0 +1,268 @@
+import { useEffect, useState } from 'react';
+import { captureEvent, captureException } from '@sentry/react';
+import { useQueryClient } from '@tanstack/react-query';
+import {
+  type PlaidLinkError,
+  type PlaidLinkOnExitMetadata,
+  type PlaidLinkOnSuccessMetadata,
+  type PlaidLinkOptionsWithLinkToken,
+  usePlaidLink,
+} from 'react-plaid-link';
+import { useLocation } from 'wouter';
+
+import MLink from '@monetr/interface/components/MLink';
+import MLogo from '@monetr/interface/components/MLogo';
+import MSpinner from '@monetr/interface/components/MSpinner';
+import LogoutFooter from '@monetr/interface/components/setup/LogoutFooter';
+import Typography from '@monetr/interface/components/Typography';
+import request from '@monetr/interface/util/request';
+
+import styles from './PlaidSetup.module.scss';
+
+interface PlaidProps {
+  alreadyOnboarded?: boolean;
+}
+
+export default function PlaidSetup(props: PlaidProps): JSX.Element {
+  interface State {
+    token: string | null;
+    loading: boolean;
+    settingUp: boolean;
+    error: string | null;
+    exited: boolean;
+  }
+
+  const [{ token, loading, error, exited, settingUp }, setState] = useState<Partial<State>>({
+    error: null,
+    exited: false,
+    loading: false,
+    settingUp: false,
+    token: null,
+  });
+
+  const queryClient = useQueryClient();
+  const [, navigate] = useLocation();
+
+  async function longPollSetup(recur: number, linkId: number): Promise<void> {
+    setState({
+      token,
+      loading,
+      error,
+      exited,
+      settingUp: true,
+    });
+
+    if (recur > 6) {
+      return Promise.resolve();
+    }
+
+    return void request({ method: 'GET', url: `/api/plaid/link/setup/wait/${linkId}` }).catch(error => {
+      if (error.response.status === 408) {
+        return longPollSetup(recur + 1, linkId);
+      }
+
+      throw error;
+    });
+  }
+
+  function onPlaidExit(error: null | PlaidLinkError, metadata: PlaidLinkOnExitMetadata) {
+    if (error) {
+      console.warn('Plaid link exited with error', {
+        'plaid.request_id': metadata.request_id,
+        'plaid.link_session_id': metadata.link_session_id,
+        data: error,
+      });
+      captureEvent({
+        message: 'Plaid link exited with error',
+        level: 'error',
+        tags: {
+          'plaid.request_id': metadata.request_id,
+          'plaid.link_session_id': metadata.link_session_id,
+        },
+        breadcrumbs: [
+          {
+            type: 'info',
+            level: 'info',
+            message: 'Error from Plaid link',
+            data: error,
+          },
+        ],
+      });
+      setState({
+        token,
+        loading,
+        exited,
+        error: 'Plaid link exited with an error.',
+      });
+    } else {
+      setState({
+        token,
+        loading,
+        exited: true,
+      });
+    }
+  }
+
+  async function onPlaidSuccess(public_token: string, metadata: PlaidLinkOnSuccessMetadata) {
+    return request<{ linkId: number }>({
+      method: 'POST',
+      url: '/api/plaid/link/token/callback',
+      data: {
+        publicToken: public_token,
+        institutionId: metadata.institution.institution_id,
+        institutionName: metadata.institution.name,
+        accountIds: metadata.accounts.map((account: { id: string }) => account.id),
+      },
+    })
+      .then(async result => {
+        const linkId: number = result.data.linkId;
+        await longPollSetup(0, linkId);
+
+        setTimeout(() => {
+          queryClient.invalidateQueries({ queryKey: ['/api/links'] });
+          queryClient.invalidateQueries({ queryKey: ['/api/bank_accounts'] });
+          navigate('/');
+        }, 8000);
+      })
+      .catch(error => {
+        setState({
+          token,
+          error,
+          loading: false,
+          settingUp: false,
+        });
+      });
+  }
+
+  const config: PlaidLinkOptionsWithLinkToken = {
+    token: token,
+    onSuccess: onPlaidSuccess,
+    onExit: onPlaidExit,
+    onLoad: null,
+    onEvent: null,
+  };
+
+  const { error: plaidError, open: plaidOpen } = usePlaidLink(config);
+  useEffect(() => {
+    request<{ linkToken: string }>({ method: 'GET', url: '/api/plaid/link/token/new?use_cache=true' })
+      .then(result =>
+        setTimeout(() => {
+          setState({
+            loading: false,
+            token: result.data.linkToken,
+            error: null,
+          });
+        }, 1000),
+      )
+      .catch(error =>
+        setTimeout(() => {
+          const message = error?.response?.data?.error || 'Could not connect to Plaid, an unknown error occurred.';
+          setState({
+            loading: false,
+            token: null,
+            error: message,
+          });
+        }, 3000),
+      );
+  }, []);
+
+  useEffect(() => {
+    if (token && plaidOpen) {
+      plaidOpen();
+      setState({
+        token,
+        loading: true,
+      });
+    }
+  }, [token, plaidOpen]);
+
+  useEffect(() => {
+    if (plaidError) {
+      captureException(plaidError);
+    }
+  }, [plaidError]);
+
+  let inner: React.ReactNode = (
+    <div className={styles.inner}>
+      <Typography size='2xl' weight='medium'>
+        Getting Plaid Ready!
+      </Typography>
+      <Typography color='subtle' size='lg'>
+        One moment while we prepare your connection with Plaid.
+      </Typography>
+    </div>
+  );
+
+  if (settingUp) {
+    inner = (
+      <div className={styles.inner}>
+        <Typography size='2xl' weight='medium'>
+          Successfully connected with Plaid!
+        </Typography>
+        <Typography color='subtle' size='lg'>
+          Hold on a moment while we pull the initial data from Plaid into monetr.
+        </Typography>
+      </div>
+    );
+  }
+
+  if (loading) {
+    inner = (
+      <div className={styles.inner}>
+        <MSpinner />
+      </div>
+    );
+  }
+
+  if (error) {
+    inner = (
+      <div className={styles.inner}>
+        <Typography size='2xl' weight='medium'>
+          Something isn't quite right
+        </Typography>
+        <Typography color='subtle' size='lg'>
+          We were not able to get Plaid ready for you at this time, please try again shortly.
+        </Typography>
+        <Typography color='subtle' size='lg'>
+          If the problem continues, please contact support@monetr.app
+        </Typography>
+        <Typography color='muted' size='md'>
+          Error Message: {error}
+        </Typography>
+      </div>
+    );
+  }
+
+  if (exited) {
+    const backUrl = props.alreadyOnboarded ? '/link/create' : '/setup';
+    inner = (
+      <div className={styles.inner}>
+        <Typography size='2xl' weight='medium'>
+          Something isn't quite right
+        </Typography>
+        <Typography color='subtle' size='lg'>
+          Plaid exited, did you want to set it up later?
+        </Typography>
+        <Typography color='subtle' size='md'>
+          Or <MLink to={backUrl}>go back</MLink> and pick another option?
+        </Typography>
+      </div>
+    );
+  }
+
+  function Footer(): JSX.Element {
+    if (props.alreadyOnboarded) {
+      return null;
+    }
+
+    return <LogoutFooter />;
+  }
+
+  return (
+    <div className={styles.root}>
+      <MLogo className={styles.logo} />
+      {inner}
+      <Footer />
+    </div>
+  );
+}

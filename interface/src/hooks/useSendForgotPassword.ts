@@ -1,0 +1,41 @@
+import type { ApiError } from '@monetr/interface/api/client';
+import request, { type APIError } from '@monetr/interface/util/request';
+import { useSnackbar, type VariantType } from '@monetr/notify';
+
+export default function useSendForgotPassword(): (email: string, ReCAPTCHA: string | null) => Promise<void> {
+  const { enqueueSnackbar } = useSnackbar();
+  return async (email: string, ReCAPTCHA: string | null) => {
+    return request({
+      method: 'POST',
+      url: '/api/authentication/forgot',
+      data: {
+        email,
+        captcha: ReCAPTCHA,
+      },
+    })
+      .then(
+        () =>
+          void enqueueSnackbar('Successfully sent password reset link.', {
+            variant: 'success',
+            disableWindowBlurListener: true,
+          }),
+      )
+      .catch((error: ApiError<APIError>) => {
+        const message = error.response.data.error || 'Failed to send password reset email.';
+        let variant: VariantType = 'error';
+
+        // Check to see if the status code is precondition required. If it is that means that the email address is valid
+        // but is not verified. We are enforcing that an email address be verified before allowing any other actions to
+        // be taken.
+        if (error?.response?.status === 428) {
+          // When we get this, change the notification to be a warning instead of an error.
+          variant = 'warning';
+        }
+
+        enqueueSnackbar(message, {
+          variant,
+          disableWindowBlurListener: true,
+        });
+      });
+  };
+}

@@ -1,0 +1,126 @@
+@use '@monetr/interface/mixins';
+@use '@monetr/interface/variables';
+
+:global(.sidebar-open) {
+  .bankSidebarWrapperRoot {
+    display: flex;
+  }
+
+  @media (max-width: variables.$largeScreen) {
+    .bankSidebarWrapperRoot {
+      background-color: color-mix(in srgb, var(--background) 50%, transparent);
+      backdrop-filter: blur(4px) brightness(0.3);
+    }
+  }
+}
+
+:global(.sidebar-close) {
+  .bankSidebarWrapperRoot {
+    display: none;
+  }
+
+  @media (min-width: variables.$largeScreen) {
+    .bankSidebarWrapperRoot {
+      display: flex;
+    }
+  }
+}
+
+.bankSidebarWrapperRoot {
+  z-index: 41;
+  position: fixed;
+  left: 0;
+  top: 0;
+  bottom: 0;
+
+  border-right: 1px solid var(--border);
+  flex-direction: column;
+  width: var(--bank-sidebar-width-static);
+  gap: 4 * variables.$size;
+  align-items: center;
+
+  padding-top: calc(4 * variables.$size + env(safe-area-inset-top));
+  padding-bottom: calc(4 * variables.$size + env(safe-area-inset-bottom));
+}
+
+// The mobile toggle at the top of the sidebar. Laid out as flex below large
+// screens and hidden at large screens and up.
+.toggle {
+  display: flex;
+
+  @media (min-width: variables.$largeScreen) {
+    display: none;
+  }
+}
+
+// Wrapper that reserves the row for either the "+1 add link" button or the
+// error indicator.
+.itemRow {
+  width: 100%;
+  height: 12 * variables.$size;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+// The circular floating button used for both the add-link (+1) action and the
+// error state.
+.indicatorCircle {
+  position: absolute;
+  border-radius: 9999px;
+  width: 10 * variables.$size;
+  height: 10 * variables.$size;
+  background-color: var(--background-subtle);
+  // drop-shadow-md (Tailwind default)
+  filter: drop-shadow(0 4px 3px rgb(0 0 0 / 0.07)) drop-shadow(0 2px 2px rgb(0 0 0 / 0.06));
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  &:hover {
+    background-color: var(--background-emphasis);
+  }
+}
+
+// The alert glyph inside the error indicator.
+.alertIcon {
+  width: 9 * variables.$size;
+  height: 9 * variables.$size;
+}
+
+// Logo wrapper.
+.logoWrapper {
+  height: 10 * variables.$size;
+  width: 10 * variables.$size;
+}
+
+// The logo image fills its wrapper.
+.logo {
+  width: 100%;
+}
+
+// The divider under the logo.
+.divider {
+  width: 50%;
+}
+
+// Scrollable column holding the per-link items.
+.items {
+  height: 100%;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+// Settings / logout glyph buttons at the bottom of the sidebar.
+.actionIcon {
+  color: var(--content-subtle);
+  cursor: pointer;
+
+  &:hover {
+    color: var(--content-emphasis);
+  }
+}

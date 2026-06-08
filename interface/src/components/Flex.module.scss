@@ -1,0 +1,82 @@
+@use '@monetr/interface/variables';
+
+.root {
+  display: flex;
+}
+
+.flexRow {
+  flex-direction: row;
+}
+
+.flexColumn {
+  flex-direction: column;
+}
+
+.flexStackMedium {
+  flex-direction: column;
+
+  @media (min-width: variables.$mediumScreen) {
+    flex-direction: row;
+  }
+}
+
+.flexStackSmall {
+  flex-direction: column;
+
+  @media (min-width: variables.$smallScreen) {
+    flex-direction: row;
+  }
+}
+
+.gapSmall {
+  gap: 1 * variables.$size;
+}
+
+.gapMedium {
+  gap: 2 * variables.$size;
+}
+
+.gapLarge {
+  gap: 4 * variables.$size;
+}
+
+.gapExtraLarge {
+  gap: 8 * variables.$size;
+}
+
+.justifyStart {
+  justify-content: start;
+}
+
+.justifyCenter {
+  justify-content: center;
+}
+
+.justifyBetween {
+  justify-content: space-between;
+}
+
+.justifyEnd {
+  justify-content: end;
+}
+
+.alignCenter {
+  align-items: center;
+}
+
+.flexGrow {
+  flex: 1;
+}
+
+.flexShrink {
+  flex-shrink: 1;
+  min-width: 0px;
+}
+
+.shrinkNone {
+  flex-shrink: 0;
+}
+
+.widthFit {
+  width: fit-content;
+}

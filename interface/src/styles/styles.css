@@ -1,0 +1,78 @@
+*:focus {
+    outline: none;
+}
+
+button:focus {
+    outline: none;
+}
+
+/* Make it so that number inputs don't have the stepper arrows */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type=number] {
+  -moz-appearance: textfield;
+}
+/* end of stepper arrow go away */
+
+
+.smooth-animation {
+    backface-visibility: hidden;
+}
+
+/*
+ Fix some weird 1password thing thats being inserted by the chrome extention?
+ Web development is great...
+*/
+#\31 p-live-region {
+  display: none;
+}
+
+.transactions-item .transaction-select__control {
+  background-color: transparent;
+}
+.transactions-item .transaction-select__control:not(:hover):not(:focus-within) {
+  border-color: transparent;
+}
+.transactions-item .transaction-select__control:not(:hover):not(:focus-within) .transaction-select__indicators {
+  opacity: 0;
+}
+.transactions-item .transaction-select__menu {
+  z-index: 2;
+}
+.transactions-item .amount {
+  color: red;
+}
+.transactions-item .amount.addition {
+  color: green;
+}
+
+
+.animate-pulse {
+  animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: .5;
+  }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(-360deg);
+  }
+}

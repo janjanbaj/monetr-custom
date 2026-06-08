@@ -1,0 +1,156 @@
+name: Bot
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  release_please:
+    name: Release Please
+    runs-on: ubuntu-latest
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      version: "${{ steps.release.outputs.major }}.${{ steps.release.outputs.minor }}.${{ steps.release.outputs.patch }}"
+    steps:
+      - uses: GoogleCloudPlatform/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
+        id: release
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+
+  build_ui:
+    name: Build UI
+    if: ${{ needs.release_please.outputs.release_created }}
+    needs:
+      - release_please
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+      - name: Fix dumb git issue
+        run: |
+          git config --global --add safe.directory ${PWD}
+
+      - name: Build Interface
+        run: |
+          make interface RELEASE=${{ needs.release_please.outputs.version }}
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        name: Upload UI As Artifact
+        with:
+          name: '${{ needs.release_please.outputs.version }}-maps'
+          path: '${{ github.workspace }}/server/ui/static'
+          retention-days: 7
+
+  docker:
+    if: ${{ needs.release_please.outputs.release_created }}
+    needs:
+      - release_please
+    name: Container (Docker)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+      artifact-metadata: write
+      packages: write
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@06116385d9baf250c9f4dcb4858b16962ea869c3 # v4.1.0
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5 # v4.1.0
+      - name: Login to DockerHub
+        uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
+        with:
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Login to quay.io
+        uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
+        with:
+          registry: quay.io
+          username: ${{ secrets.QUAY_USERNAME }}
+          password: ${{ secrets.QUAY_PASSWORD }}
+      - name: Install cosign
+        uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+      - name: Build and Sign container
+        id: sign
+        run: |
+          git config --global --add safe.directory ${PWD}
+          make sign-container CMAKE_OPTIONS="-DSIGN_RECURSIVE=ON" RELEASE_VERSION=${{ needs.release_please.outputs.version }}
+      - name: Attest build provenance (ghcr.io)
+        uses: actions/attest-build-provenance@a2bbfa25375fe432b6a289bc6b6cd05ecd0c4c32 # v4.1.0
+        with:
+          subject-name: ghcr.io/monetr/monetr
+          subject-digest: ${{ steps.sign.outputs.digest }}
+          push-to-registry: true
+      - name: Attest build provenance (docker.io)
+        uses: actions/attest-build-provenance@a2bbfa25375fe432b6a289bc6b6cd05ecd0c4c32 # v4.1.0
+        with:
+          subject-name: docker.io/monetr/monetr
+          subject-digest: ${{ steps.sign.outputs.digest }}
+          push-to-registry: true
+      - name: Attest build provenance (quay.io)
+        uses: actions/attest-build-provenance@a2bbfa25375fe432b6a289bc6b6cd05ecd0c4c32 # v4.1.0
+        with:
+          subject-name: quay.io/monetr/monetr
+          subject-digest: ${{ steps.sign.outputs.digest }}
+          push-to-registry: true
+
+  deploy:
+    if: ${{ needs.release_please.outputs.release_created }}
+    needs:
+      - "release_please"
+      - "docker"
+      - "build_ui"
+    name: Deploy my.monetr.app
+    runs-on: ubuntu-latest
+    steps:
+      - uses: chrnorm/deployment-action@500aa6a23c81ffa1acf71072aee3cfa2cc2e556a # v2.0.8
+        name: Create my.monetr.app Deployment
+        id: deployment
+        with:
+          initial-status: queued
+          token: "${{ github.token }}"
+          environment-url: https://my.monetr.app
+          environment: my.monetr.app
+          transient-environment: false
+          production-environment: false
+          ref: "v${{ needs.release_please.outputs.version }}"
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        name: Download UI As Artifact
+        with:
+          name: '${{ needs.release_please.outputs.version }}-maps'
+          path: '${{ github.workspace }}/server/ui/static'
+      - name: Create Sentry Release
+        uses: getsentry/action-release@f71adb49d4b2aeeda98052d3de234bbb0f3e03ab # v3.6.1
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: monetr
+        with:
+          environment: 'my.monetr.app'
+          release: 'v${{ needs.release_please.outputs.version }}'
+          sourcemaps: 'server/ui/static/assets/scripts'
+          url_prefix: 'https://my.monetr.app'
+      - name: Trigger Deployment
+        run: |
+          curl -X POST \
+            --fail \
+            -F token=${{ secrets.GITLAB_CI_TOKEN }} \
+            -F "ref=main" \
+            -F "variables[ENVIRONMENT]=my.monetr.app" \
+            -F "variables[GH_DEPLOYMENT_ID]=${{ steps.deployment.outputs.deployment_id }}" \
+            -F "variables[DEPLOY_VERSION]=v${{ needs.release_please.outputs.version }}" \
+            https://gitlab.com/api/v4/projects/61422476/trigger/pipeline

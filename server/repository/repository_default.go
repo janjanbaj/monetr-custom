@@ -1,0 +1,20 @@
+package repository
+
+import (
+	"log/slog"
+
+	"github.com/benbjohnson/clock"
+	"github.com/go-pg/pg/v10"
+	. "github.com/monetr/monetr/server/models"
+	"github.com/monetr/monetr/server/secrets"
+)
+
+type repositoryBase struct {
+	userId    ID[User]
+	accountId ID[Account]
+	txn       pg.DBI
+	account   *Account
+	kms       secrets.KeyManagement
+	clock     clock.Clock
+	log       *slog.Logger
+}

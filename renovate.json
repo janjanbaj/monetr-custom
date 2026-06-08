@@ -1,0 +1,192 @@
+{
+  "extends": [
+    "config:recommended",
+    ":semanticCommitTypeAll(deps)",
+    "helpers:pinGitHubActionDigestsToSemver"
+  ],
+  "semanticCommits": "enabled",
+  "semanticCommitType": "deps",
+  "semanticCommitScope": "Renovate",
+  "branchConcurrentLimit": 20,
+  "prConcurrentLimit": 20,
+  "minimumReleaseAge": "7 days",
+  "vulnerabilityAlerts": {
+    "minimumReleaseAge": "0 days"
+  },
+  "postUpdateOptions": [
+    "gomodUpdateImportPaths",
+    "gomodTidy"
+  ],
+  "packageRules": [
+    {
+      "matchPackageNames": [
+        "@monetr/{/,}**",
+        "github.com/monetr/{/,}**"
+      ],
+      "minimumReleaseAge": "0 days"
+    },
+    {
+      "matchPackageNames": [
+        "@types/.+",
+        "renovate"
+      ],
+      "extends": [
+        "schedule:monthly"
+      ]
+    },
+    {
+      "groupName": "aws",
+      "groupSlug": "aws",
+      "matchPackageNames": [
+        "github.com/aws/{/,}**"
+      ],
+      "extends": [
+        "schedule:monthly"
+      ]
+    },
+    {
+      "matchCategories": [
+        "go",
+        "golang"
+      ],
+      "semanticCommitScope": "api"
+    },
+    {
+      "matchCategories": [
+        "js",
+        "javascript",
+        "typescript"
+      ],
+      "semanticCommitScope": "ui"
+    },
+    {
+      "matchCategories": [
+        "docker",
+        "dockerfile"
+      ],
+      "semanticCommitScope": "containers"
+    },
+    {
+      "matchManagers": [
+        "github-actions"
+      ],
+      "semanticCommitType": "build",
+      "semanticCommitScope": "deps"
+    },
+    {
+      "groupName": "rsbuild",
+      "groupSlug": "rsbuild",
+      "matchPackageNames": [
+        "/rspack/",
+        "/rsbuild/"
+      ]
+    },
+    {
+      "groupName": "rspress",
+      "groupSlug": "rspress",
+      "matchPackageNames": [
+        "/rspress/"
+      ]
+    },
+    {
+      "groupName": "rstest",
+      "groupSlug": "rstest",
+      "matchPackageNames": [
+        "/rstest/"
+      ]
+    },
+    {
+      "groupName": "golang",
+      "groupSlug": "golang",
+      "matchPackageNames": [
+        "go",
+        "golang"
+      ]
+    },
+    {
+      "groupName": "golang.org/x",
+      "groupSlug": "golang-x",
+      "matchPackageNames": [
+        "golang.org/x/{/,}**"
+      ]
+    },
+    {
+      "groupName": "sass",
+      "groupSlug": "sass",
+      "matchPackageNames": [
+        "/sass/"
+      ]
+    }
+  ],
+  "dockerfile": {
+    "fileMatch": [
+      "Dockerfile"
+    ]
+  },
+  "docker-compose": {
+    "fileMatch": [
+      "compose/.+\\.yaml.in$",
+      "docker-compose.yaml"
+    ]
+  },
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Update Golang min version in CMake",
+      "fileMatch": ["CMakeLists.txt", ".+\\.cmake"],
+      "matchStrings": ["set\\(GO_MIN_VERSION \"(?<currentValue>.*?)\"\\)"],
+      "depNameTemplate": "go",
+      "datasourceTemplate": "golang-version"
+    },
+    {
+      "customType": "regex",
+      "description": "Update Golang min version in docs",
+      "fileMatch": [".+\\.mdx"],
+      "matchStrings": ["[Gg]o.*?(?<currentValue>\\d+\\.\\d+\\.\\d+)"],
+      "depNameTemplate": "go",
+      "datasourceTemplate": "golang-version"
+    },
+    {
+      "customType": "regex",
+      "description": "Update Node min version in CMake",
+      "fileMatch": ["CMakeLists.txt", ".+\\.cmake"],
+      "matchStrings": ["set\\(NODE_MIN_VERSION \"(?<currentValue>\\d+\\.\\d+\\.\\d+)\"\\)"],
+      "depNameTemplate": "node",
+      "datasourceTemplate": "node-version"
+    },
+    {
+      "customType": "regex",
+      "description": "Update go.uber.org/mock",
+      "fileMatch": [".+\\.go"],
+      "matchStrings": ["//go:generate go run go.uber.org/mock/mockgen@(?<currentValue>v\\d+\\.\\d+\\.\\d+)"],
+      "depNameTemplate": "go.uber.org/mock",
+      "datasourceTemplate": "go"
+    },
+    {
+      "customType": "regex",
+      "description": "Update Node min version in docs",
+      "fileMatch": [".+\\.mdx"],
+      "matchStrings": ["[Nn]ode.*?(?<currentValue>\\d+\\.\\d+\\.\\d+)"],
+      "depNameTemplate": "node",
+      "datasourceTemplate": "node-version"
+    },
+    {
+      "customType": "regex",
+      "description": "Update simple-icons version in CMake",
+      "fileMatch": ["CMakeLists.txt"],
+      "matchStrings": ["GIT_REPOSITORY .+simple-icons.+\n.+GIT_TAG (?<currentValue>.*?)\n"],
+      "depNameTemplate": "simple-icons",
+      "packageNameTemplate": "https://github.com/simple-icons/simple-icons.git",
+      "datasourceTemplate": "git-refs"
+    },
+    {
+      "customType": "regex",
+      "description": "Update biome schema version",
+      "fileMatch": ["biome.jsonc"],
+      "matchStrings": ["https:\/\/biomejs.dev\/schemas\/(?<currentValue>.*?)\/schema.json"],
+      "depNameTemplate": "@biomejs/biome",
+      "packageNameTemplate": "@biomejs/biome",
+      "datasourceTemplate": "npm"
+    }
+  ]
+}

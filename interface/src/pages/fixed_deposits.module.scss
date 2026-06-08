@@ -1,0 +1,213 @@
+@use '@monetr/interface/variables';
+
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: 4 * variables.$size;
+  padding: 4 * variables.$size;
+  overflow-y: auto;
+  flex: 1;
+  width: 100%;
+}
+
+.headerIcon {
+  width: 7 * variables.$size;
+  height: 7 * variables.$size;
+  color: var(--brand-muted);
+}
+
+.btnIcon {
+  width: 5 * variables.$size;
+  height: 5 * variables.$size;
+  margin-right: variables.$size;
+}
+
+.analyticsGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 3 * variables.$size;
+
+  @media (min-width: variables.$mediumScreen) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @media (min-width: variables.$largeScreen) {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.analyticsCard {
+  background: var(--background-subtle);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 3 * variables.$size 4 * variables.$size;
+  display: flex;
+  flex-direction: column;
+  gap: variables.$size;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    border-color: var(--brand-muted);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+  }
+}
+
+.analyticsCardIcon {
+  position: absolute;
+  right: 2 * variables.$size;
+  bottom: 2 * variables.$size;
+  opacity: 0.04;
+  width: 14 * variables.$size;
+  height: 14 * variables.$size;
+  color: var(--content-emphasis);
+  pointer-events: none;
+}
+
+.cardTitle {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--content-subtle);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.cardValue {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--content-emphasis);
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 3 * variables.$size;
+  margin-top: 2 * variables.$size;
+}
+
+.sectionTitle {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: variables.$size;
+  color: var(--content-emphasis);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 4 * variables.$size;
+
+  @media (min-width: variables.$mediumScreen) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @media (min-width: variables.$largeScreen) {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.card {
+  background: var(--background-subtle);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 4 * variables.$size;
+  display: flex;
+  flex-direction: column;
+  gap: 3 * variables.$size;
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+
+  &:hover {
+    border-color: var(--brand-muted);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  }
+}
+
+.amountText {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--amount-positive);
+  margin-top: variables.$size;
+}
+
+.metaRow {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 2 * variables.$size;
+}
+
+.progressContainer {
+  display: flex;
+  flex-direction: column;
+  gap: variables.$size;
+  margin-top: variables.$size;
+}
+
+.progressLabel {
+  display: flex;
+  justify-content: space-between;
+}
+
+.progressBar {
+  height: 2 * variables.$size;
+  background-color: var(--progress-track);
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background-color: var(--progress-used);
+  border-radius: 9999px;
+  transition: width 0.4s ease-out;
+}
+
+.withdrawBtn {
+  width: 100%;
+  margin-top: variables.$size;
+}
+
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 10 * variables.$size;
+  background: var(--background-subtle);
+  border: 2px dashed var(--border);
+  border-radius: var(--border-radius);
+  gap: 2 * variables.$size;
+  text-align: center;
+}
+
+.emptyIcon {
+  width: 12 * variables.$size;
+  height: 12 * variables.$size;
+  color: var(--content-muted);
+}
+
+.historyList {
+  display: flex;
+  flex-direction: column;
+  gap: 2 * variables.$size;
+}
+
+.historyRow {
+  background: var(--background-subtle);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 3 * variables.$size 4 * variables.$size;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+
+  &:hover {
+    background-color: var(--background-emphasis);
+    border-color: var(--brand-muted);
+  }
+}
+
+.historyIcon {
+  color: var(--content-subtle);
+}

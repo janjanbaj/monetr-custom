@@ -1,0 +1,10 @@
+[
+  {
+    "fundingScheduleId": "fund_example",
+    "ruleset": "DTSTART:20230228T060000Z\nRRULE:FREQ=MONTHLY;INTERVAL=1;BYMONTHDAY=15,-1",
+    "excludeWeekends": true,
+    "lastRecurrence": "2023-06-30T05:00:00Z",
+    "nextRecurrence": "2023-07-14T05:00:00Z",
+    "nextRecurrenceOriginal": "2023-07-15T05:00:00Z"
+  }
+]

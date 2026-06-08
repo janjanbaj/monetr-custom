@@ -1,0 +1,400 @@
+@use '@monetr/interface/variables';
+
+.loading, .error {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  gap: 2 * variables.$size;
+  color: var(--content-subtle);
+}
+
+.layout {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.calendarContainer {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  padding: 6 * variables.$size;
+  overflow: auto;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4 * variables.$size;
+}
+
+.navButtons {
+  display: flex;
+  gap: 2 * variables.$size;
+}
+
+// ── Grid ──────────────────────────────────────────────
+.grid {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  background-color: var(--background-darker);
+  border-radius: 2 * variables.$size;
+  overflow: hidden;
+}
+
+.daysHeader {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  background-color: var(--background-subtle);
+}
+
+.rowLabelSpacer {
+  width: 150px;
+  border-right: 1px solid var(--border);
+  flex-shrink: 0;
+  background-color: var(--background-darker);
+}
+
+.headerDaysWrapper {
+  display: flex;
+  flex: 1;
+}
+
+.dayCol {
+  flex: 1;
+  min-width: 10 * variables.$size;
+  text-align: center;
+  padding: 2 * variables.$size 0;
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+
+  &:last-child {
+    border-right: none;
+  }
+}
+
+.dayLabel {
+  font-weight: 700;
+  color: var(--content-emphasis);
+}
+
+.dayWeek {
+  font-size: 0.75rem;
+  color: var(--content-subtle);
+}
+
+// ── Timeline Rows ─────────────────────────────────────
+.timelineRows {
+  display: flex;
+  flex-direction: column;
+  min-height: 50 * variables.$size;
+}
+
+.emptyGrid {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex: 1;
+  padding: 8 * variables.$size;
+  color: var(--content-subtle);
+}
+
+.row {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  align-items: center;
+  position: relative;
+  height: 15 * variables.$size;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.rowLabel {
+  width: 150px;
+  padding: 0 4 * variables.$size;
+  font-weight: 500;
+  color: var(--content-emphasis);
+  border-right: 1px solid var(--border);
+  flex-shrink: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rowTracks {
+  display: flex;
+  flex: 1;
+  position: relative;
+  height: 100%;
+}
+
+.trackCell {
+  flex: 1;
+  min-width: 10 * variables.$size;
+  border-right: 1px solid var(--border);
+  height: 100%;
+
+  &:last-child {
+    border-right: none;
+  }
+}
+
+// ── Accrual Blocks (Gantt bars) ───────────────────────
+.accrualBlock {
+  position: absolute;
+  top: 10%;
+  height: 80%;
+  background: linear-gradient(135deg, var(--brand) 0%, var(--brand-subtle) 100%);
+  border-radius: 2 * variables.$size;
+  border: 1px solid var(--brand-muted);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+  overflow: hidden;
+  z-index: 1;
+
+  &:active {
+    cursor: grabbing;
+    border-color: var(--brand-bright);
+  }
+}
+
+.blockContent {
+  display: flex;
+  flex-direction: column;
+  padding: 0 2 * variables.$size;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+}
+
+.blockTitle {
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--content-emphasis);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.blockAmount {
+  font-size: 0.75rem;
+  color: var(--brand-bright);
+}
+
+.resizeHandle {
+  width: 8px;
+  min-width: 8px;
+  height: 100%;
+  cursor: ew-resize;
+  background-color: rgba(255, 255, 255, 0.1);
+  transition: background-color 0.2s ease;
+
+  &:hover {
+    background-color: var(--brand-bright);
+  }
+}
+
+.handleLeft {
+  border-top-left-radius: 2 * variables.$size;
+  border-bottom-left-radius: 2 * variables.$size;
+}
+
+.handleRight {
+  border-top-right-radius: 2 * variables.$size;
+  border-bottom-right-radius: 2 * variables.$size;
+}
+
+// ── Sidebar Layout ────────────────────────────────────
+.sidebar {
+  width: 70 * variables.$size;
+  border-left: 1px solid var(--border);
+  background-color: var(--background-subtle);
+  display: flex;
+  flex-direction: column;
+  padding: 4 * variables.$size;
+  overflow-y: auto;
+  gap: 2 * variables.$size;
+}
+
+.sidebarTitle {
+  color: var(--content-emphasis);
+}
+
+.sidebarSubtitle {
+  margin-bottom: 2 * variables.$size;
+}
+
+.txnList {
+  display: flex;
+  flex-direction: column;
+  gap: 3 * variables.$size;
+}
+
+.emptySidebar {
+  text-align: center;
+  color: var(--content-subtle);
+  font-size: 0.85rem;
+  padding: 8 * variables.$size 0;
+  border: 1px dashed var(--border);
+  border-radius: 2 * variables.$size;
+}
+
+.txnCard {
+  background-color: var(--background-darker);
+  border: 1px solid var(--border);
+  border-radius: 2 * variables.$size;
+  padding: 3 * variables.$size;
+  cursor: grab;
+  user-select: none;
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+
+  &:hover {
+    border-color: var(--brand-muted);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+
+    .txnDragIcon {
+      opacity: 1;
+      transform: translateX(2px);
+    }
+  }
+
+  &:active {
+    cursor: grabbing;
+    opacity: 0.7;
+  }
+}
+
+.txnName {
+  font-weight: 600;
+  color: var(--content-emphasis);
+  font-size: 0.85rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-bottom: variables.$size;
+}
+
+.txnMeta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.txnAmount {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--content-subtle);
+}
+
+.txnDragIcon {
+  color: var(--brand);
+  opacity: 0.3;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+// ── Drag & Drop Highlighting ─────────────────────────
+.trackCellDragOver {
+  background-color: rgba(var(--brand), 0.1) !important;
+  border-left: 1px dashed var(--brand);
+  border-right: 1px dashed var(--brand);
+}
+
+// ── Ghost/Empty Track rows ───────────────────────────
+.emptyContainer {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  flex: 1;
+}
+
+.ghostRow {
+  display: flex;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  pointer-events: none;
+  opacity: 0.2;
+
+  .rowLabelSpacer {
+    visibility: hidden;
+  }
+
+  .trackCell {
+    pointer-events: auto;
+    border-right: 1px dashed var(--border);
+
+    &:last-child {
+      border-right: none;
+    }
+  }
+}
+
+// ── Analytics Bar ─────────────────────────────────────
+.analyticsBar {
+  display: flex;
+  gap: 4 * variables.$size;
+  align-items: center;
+  margin-top: 6 * variables.$size;
+  padding: 4 * variables.$size;
+  background-color: var(--background-subtle);
+  border: 1px solid var(--border);
+  border-radius: 2 * variables.$size;
+}
+
+.metricCard {
+  display: flex;
+  flex-direction: column;
+  gap: variables.$size;
+  min-width: 40 * variables.$size;
+}
+
+.metricLabel {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--content-subtle);
+}
+
+.metricValue {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: var(--content-emphasis);
+}
+
+.accrualValue {
+  color: var(--brand-bright);
+}
+
+.metricExplanation {
+  flex: 1;
+  font-size: 0.85rem;
+  color: var(--content-subtle);
+  border-left: 2px solid var(--border);
+  padding-left: 4 * variables.$size;
+  line-height: 1.4;
+
+  strong {
+    color: var(--content-emphasis);
+  }
+}
+
+

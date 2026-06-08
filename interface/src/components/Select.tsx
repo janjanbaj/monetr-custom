@@ -1,0 +1,321 @@
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { type UseComboboxSelectedItemChange, useCombobox } from 'downshift';
+import { ArrowDown, ArrowUp, LoaderCircle, PanelBottomClose, PanelBottomOpen } from 'lucide-react';
+
+import { Drawer, DrawerContent, DrawerTrigger, DrawerWrapper } from '@monetr/interface/components/Drawer';
+import ErrorText from '@monetr/interface/components/ErrorText';
+import Label, { type LabelDecorator } from '@monetr/interface/components/Label';
+import { Skeleton } from '@monetr/interface/components/Skeleton';
+import useIsMobile from '@monetr/interface/hooks/useIsMobile';
+import mergeClasses from '@monetr/interface/util/mergeClasses';
+
+import errorTextStyles from './ErrorText.module.scss';
+import inputStyles from './FormTextField.module.scss';
+import selectStyles from './Select.module.scss';
+
+export interface SelectOption<V> {
+  label: string;
+  value: V;
+}
+
+export interface SelectOptionComponentProps<V = unknown> extends SelectOption<V> {
+  selected: boolean;
+}
+
+export interface SelectProps<V = unknown> {
+  id?: string;
+  className?: string;
+  name?: string;
+  placeholder?: string;
+  label?: string;
+  labelDecorator?: LabelDecorator;
+  error?: string;
+  required?: boolean;
+  disabled?: boolean;
+  isLoading?: boolean;
+  value?: SelectOption<V>;
+  options: Array<SelectOption<V>>;
+  optionComponent?: React.FC<SelectOptionComponentProps<V>>;
+  onChange: (newValue: SelectOption<V>) => void;
+  // filterImpl is a function that takes the current filter input and returns a function that evaluates whether or not
+  // the current option satisfies that filter input. This can be provided to allow for custom search implementations on
+  // the options in a select. If no implementation is specified then the default behavior will be to see if the label
+  // contains the provided text.
+  filterImpl?: (filterText: string) => (option: SelectOption<V>) => boolean;
+}
+
+export interface SelectPropsLoading<V> extends SelectProps<V> {
+  isLoading: true;
+}
+
+export function defaultFilterImplementation<V = unknown>(filterText: string): (option: SelectOption<V>) => boolean {
+  return (option: SelectOption<V>) => {
+    return option.label.toLocaleLowerCase().includes(filterText.toLocaleLowerCase());
+  };
+}
+
+export function DefaultSelectOptionComponent<V = unknown>(props: SelectOptionComponentProps<V>): React.ReactNode {
+  return props.label;
+}
+
+export default function Select<V>(props: SelectProps<V>): React.JSX.Element {
+  const isMobile = useIsMobile();
+  if (props.isLoading) {
+    return <SelectLoading<V> {...props} isLoading />;
+  }
+
+  if (isMobile) {
+    return <SelectDrawer<V> {...props} />;
+  }
+
+  return <SelectCombobox<V> {...props} />;
+}
+
+export function SelectLoading<V>(props: SelectPropsLoading<V>): React.JSX.Element {
+  const LabelDecorator = props.labelDecorator || (() => null);
+  return (
+    <div className={mergeClasses(errorTextStyles.errorTextPadding, props.className)}>
+      <Label disabled={props.disabled} htmlFor={props.id} label={props.label} required={props.required}>
+        <LabelDecorator disabled={props.disabled} name={props.name} />
+      </Label>
+      <div className={mergeClasses(inputStyles.input, selectStyles.selectLoading)} data-error={props.error}>
+        <Skeleton className={selectStyles.loadingSkeleton} />
+        <SelectIndicator disabled={props.disabled} isLoading={props.isLoading} open={false} />
+      </div>
+      <ErrorText error={props.error} />
+    </div>
+  );
+}
+
+export function SelectCombobox<V>(props: SelectProps<V>): React.JSX.Element {
+  const inputWrapperRef = useRef<HTMLDivElement>(null);
+  const [items, setItems] = useState<Array<SelectOption<V>>>(props.options);
+  const filterImplementation = useMemo(() => {
+    if (props.filterImpl) {
+      return props.filterImpl;
+    }
+
+    return defaultFilterImplementation<V>;
+  }, [props.filterImpl]);
+
+  const { isOpen, getMenuProps, getInputProps, getItemProps, openMenu, selectedItem, selectItem } = useCombobox({
+    selectedItem: props.value,
+    // By default the highest item should be "highlighted" unless the user moves the highlight themselves.
+    defaultHighlightedIndex: 0,
+    // But the initially highlighted item should be the one they have selected otherwise fallback to the first item.
+    initialHighlightedIndex: props.value ? props.options.indexOf(props.value) : 0,
+    onInputValueChange({ inputValue, isOpen }) {
+      // Only filter items if we are open!
+      if (isOpen) {
+        setItems(props.options.filter(filterImplementation(inputValue)));
+      }
+    },
+    onSelectedItemChange(changes: UseComboboxSelectedItemChange<SelectOption<V>>) {
+      if (changes.selectedItem) {
+        props?.onChange(changes.selectedItem);
+      }
+    },
+    items,
+    itemToString(item: SelectOption<V>) {
+      return item ? item.label : '';
+    },
+  });
+
+  const onOpenClickHandler = useCallback(() => {
+    if (props.disabled) {
+      return;
+    }
+
+    openMenu();
+  }, [props, openMenu]);
+
+  useEffect(() => {
+    if (!isOpen) {
+      // Clear the filter when we are currently open and moving to a closed state, this makes it so that if we re-open
+      // the menu it is not filtered.
+      setItems(props.options);
+    }
+  }, [props.options, isOpen]);
+
+  // This effect gives the parent component some basic control over the state of the value of this combobox. Mainly this
+  // makes it so that if the parent component (specifically select frequency) changes its value to null. Then we need to
+  // clear the combobox value here as well so that way we reflect it. This is because it is a managed component in that
+  // sense.
+  useEffect(() => {
+    if (!props.value) {
+      selectItem(null);
+    }
+  }, [props.value, selectItem]);
+
+  const renderStyles = useMemo(() => {
+    // Controls the height of the menu that is rendered, makes sure that we dont render past the bottom of the page.
+    if (isOpen) {
+      const distanceFromTop = inputWrapperRef.current.offsetTop;
+      const heightOfWindow = window.innerHeight;
+      const heightOfWrapper = inputWrapperRef.current.offsetHeight;
+      const widthOfWrapper = inputWrapperRef.current.offsetWidth;
+      const bottomPadding = 8;
+      const spaceBelow = heightOfWindow - distanceFromTop - heightOfWrapper - bottomPadding;
+      const maxHeight = 400;
+      return {
+        maxHeight: `${spaceBelow < maxHeight ? spaceBelow : maxHeight}px`,
+        width: `${widthOfWrapper}px`,
+      };
+    }
+
+    return {};
+  }, [isOpen]);
+
+  const LabelDecorator = props.labelDecorator || (() => null);
+
+  return (
+    <div className={mergeClasses(errorTextStyles.errorTextPadding, props.className)}>
+      <Label disabled={props.disabled} htmlFor={props.id} label={props.label} required={props.required}>
+        <LabelDecorator disabled={props.disabled} name={props.name} />
+      </Label>
+      {/** biome-ignore lint/a11y/noStaticElementInteractions: Need to account for weird padding here */}
+      <div
+        aria-disabled={props.disabled}
+        className={mergeClasses(inputStyles.input, selectStyles.select)}
+        data-error={Boolean(props.error)}
+        onClick={onOpenClickHandler}
+        ref={inputWrapperRef}
+      >
+        <input
+          {...getInputProps({
+            disabled: props.disabled,
+            'aria-disabled': props.disabled,
+            placeholder: props.placeholder,
+            className: selectStyles.input,
+            onFocus: openMenu,
+            spellCheck: false,
+            'data-1p-ingore': true,
+          })}
+        />
+        <SelectIndicator disabled={props.disabled} isLoading={props.isLoading} open={isOpen} />
+      </div>
+      <ErrorText error={props.error} />
+      <ul
+        className={mergeClasses(selectStyles.unorderedList, {
+          [selectStyles.hidden]: !(isOpen && items.length),
+        })}
+        {...getMenuProps()}
+        style={renderStyles}
+      >
+        {isOpen &&
+          items.map((item, index) => (
+            <li
+              className={mergeClasses(selectStyles.option, {
+                // The _ACTUAL_ selected state will be slightly darker than the hover state.
+                [selectStyles.optionSelected]: selectedItem?.value === item.value,
+              })}
+              key={item.label}
+              {...getItemProps({
+                item,
+                index,
+              })}
+            >
+              {React.createElement<SelectOptionComponentProps<V>>(
+                props.optionComponent ?? DefaultSelectOptionComponent,
+                {
+                  ...item,
+                  selected: selectedItem?.value === item.value,
+                },
+              )}
+            </li>
+          ))}
+      </ul>
+    </div>
+  );
+}
+
+export function SelectDrawer<V>(props: SelectProps<V>): React.JSX.Element {
+  const [open, setOpen] = useState<boolean>(false);
+  const onChange = useCallback(
+    (option: SelectOption<V>) => {
+      if (props.onChange) {
+        props.onChange(option);
+        setOpen(false);
+      }
+    },
+    [props],
+  );
+
+  const LabelDecorator = props.labelDecorator || (() => null);
+
+  return (
+    <div className={mergeClasses(errorTextStyles.errorTextPadding, props.className)}>
+      <Label disabled={props.disabled} htmlFor={props.id} label={props.label} required={props.required}>
+        <LabelDecorator disabled={props.disabled} name={props.name} />
+      </Label>
+      <Drawer onOpenChange={setOpen} open={open}>
+        <DrawerTrigger asChild>
+          <button
+            aria-disabled={props.disabled}
+            className={mergeClasses(inputStyles.input, selectStyles.select)}
+            disabled={props.disabled}
+            type='button'
+          >
+            <span
+              aria-disabled={props.disabled}
+              className={mergeClasses([selectStyles.selectText], {
+                // If we don't have a value then use the placeholder text style.
+                [selectStyles.selectTextPlaceholder]: !props.value?.label,
+              })}
+            >
+              {props.value?.label ?? props.placeholder}
+            </span>
+            <SelectIndicator disabled={props.disabled} isLoading={props.isLoading} open={open} />
+          </button>
+        </DrawerTrigger>
+        <DrawerContent>
+          <DrawerWrapper>
+            <ul className={selectStyles.unorderedListMobile}>
+              {open &&
+                props.options.map(item => (
+                  <li
+                    className={mergeClasses(selectStyles.optionTouch, {
+                      // The _ACTUAL_ selected state will be slightly darker than the hover state.
+                      [selectStyles.optionSelected]: props.value === item,
+                    })}
+                    key={item.label}
+                    onClick={() => onChange(item)}
+                  >
+                    {React.createElement<SelectOptionComponentProps<V>>(
+                      props.optionComponent ?? DefaultSelectOptionComponent,
+                      {
+                        ...item,
+                        selected: props.value === item,
+                      },
+                    )}
+                  </li>
+                ))}
+            </ul>
+          </DrawerWrapper>
+        </DrawerContent>
+      </Drawer>
+      <ErrorText error={props.error} />
+    </div>
+  );
+}
+
+interface SelectIndicator {
+  isLoading?: boolean;
+  disabled?: boolean;
+  open?: boolean;
+}
+
+export function SelectIndicator({ isLoading, open }: SelectIndicator): React.JSX.Element {
+  const isMobile = useIsMobile();
+  // Hover/focus colours come from the `.select` descendant selectors.
+  const className = selectStyles.indicator;
+  if (isLoading) {
+    return <LoaderCircle className={className} data-loading='true' />;
+  }
+
+  if (isMobile) {
+    return open ? <PanelBottomClose className={className} /> : <PanelBottomOpen className={className} />;
+  }
+
+  return open ? <ArrowDown className={className} /> : <ArrowUp className={className} />;
+}

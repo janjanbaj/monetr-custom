@@ -1,0 +1,78 @@
+import { useRef, useState } from 'react';
+import NiceModal, { useModal } from '@ebay/nice-modal-react';
+import { Trash } from 'lucide-react';
+import { useLocation } from 'wouter';
+
+import { Button } from '@monetr/interface/components/Button';
+import MModal, { type MModalRef } from '@monetr/interface/components/MModal';
+import Typography from '@monetr/interface/components/Typography';
+import { useRemoveLink } from '@monetr/interface/hooks/useRemoveLink';
+import type Link from '@monetr/interface/models/Link';
+import type { ExtractProps } from '@monetr/interface/util/typescriptEvils';
+import { useSnackbar } from '@monetr/notify';
+
+import styles from './RemoveLinkModal.module.scss';
+
+export interface RemoveLinkModalProps {
+  link: Link;
+}
+
+function RemoveLinkModal(props: RemoveLinkModalProps): JSX.Element {
+  const modal = useModal();
+  const ref = useRef<MModalRef>(null);
+  const { enqueueSnackbar } = useSnackbar();
+  const [submitting, setSubmitting] = useState(false);
+  const removeLink = useRemoveLink();
+  const [, navigate] = useLocation();
+
+  async function submit() {
+    setSubmitting(true);
+    return removeLink(props.link.linkId)
+      .then(() => {
+        navigate('/');
+        modal.remove();
+      })
+      .catch(error => {
+        setSubmitting(false);
+        enqueueSnackbar(error?.response?.data?.error || `Failed to remove ${props.link.getName()}`, {
+          variant: 'error',
+          disableWindowBlurListener: true,
+        });
+      });
+  }
+
+  return (
+    <MModal className={styles.modal} open={modal.visible} ref={ref}>
+      <div className={styles.content}>
+        <div className={styles.header}>
+          <Typography className={styles.heading} size='xl' weight='bold'>
+            <Trash />
+            Remove {props.link.getName()}?
+          </Typography>
+          <Typography size='lg' weight='medium'>
+            Are you sure you want to remove your {props.link.getName()} data?
+          </Typography>
+          <Typography size='lg'>
+            All expenses, goals and transactions related to this will be deleted. This cannot be undone.
+          </Typography>
+        </div>
+        <div className={styles.actions}>
+          <Button disabled={submitting} onClick={modal.remove} variant='secondary'>
+            Cancel
+          </Button>
+          <Button disabled={submitting} onClick={submit} type='submit' variant='destructive'>
+            Remove
+          </Button>
+        </div>
+      </div>
+    </MModal>
+  );
+}
+
+const removeLinkModal = NiceModal.create<RemoveLinkModalProps>(RemoveLinkModal);
+
+export default removeLinkModal;
+
+export function showRemoveLinkModal(props: RemoveLinkModalProps): Promise<void> {
+  return NiceModal.show<void, ExtractProps<typeof removeLinkModal>, unknown>(removeLinkModal, props);
+}

@@ -1,0 +1,146 @@
+module github.com/monetr/monetr
+
+go 1.26.0
+
+require (
+	aidanwoods.dev/go-paseto v1.6.0
+	github.com/MicahParks/jwkset v0.11.0
+	github.com/MicahParks/keyfunc/v3 v3.8.0
+	github.com/alicebob/miniredis/v2 v2.38.0
+	github.com/aws/aws-sdk-go-v2 v1.41.7
+	github.com/aws/aws-sdk-go-v2/config v1.32.17
+	github.com/aws/aws-sdk-go-v2/credentials v1.19.16
+	github.com/aws/aws-sdk-go-v2/service/kms v1.51.1
+	github.com/aws/aws-sdk-go-v2/service/s3 v1.101.0
+	github.com/aws/smithy-go v1.25.1
+	github.com/benbjohnson/clock v1.3.5
+	github.com/brianvoe/gofakeit/v6 v6.28.0
+	github.com/elliotcourant/go-lclocale v0.1.2
+	github.com/elliotcourant/gofx v0.0.1
+	github.com/fsnotify/fsnotify v1.10.1
+	github.com/gavv/httpexpect/v2 v2.17.0
+	github.com/getsentry/sentry-go v0.46.2
+	github.com/go-pg/pg/v10 v10.15.1
+	github.com/golang-jwt/jwt/v5 v5.3.1
+	github.com/gomodule/redigo v1.9.3
+	github.com/hashicorp/vault/api v1.23.0
+	github.com/jarcoal/httpmock v1.4.1
+	github.com/labstack/echo/v4 v4.15.2
+	github.com/monetr/devslog v0.0.17
+	github.com/monetr/validation v1.0.6
+	github.com/oklog/ulid/v2 v2.1.1
+	github.com/openbao/openbao/api/v2 v2.5.1
+	github.com/pkg/errors v0.9.1
+	github.com/plaid/plaid-go/v42 v42.2.0
+	github.com/prometheus/client_golang v1.23.2
+	github.com/robfig/cron v1.2.0
+	github.com/spf13/cobra v1.10.2
+	github.com/spf13/viper v1.21.0
+	github.com/stretchr/testify v1.11.1
+	github.com/stripe/stripe-go/v81 v81.4.0
+	github.com/teambition/rrule-go v1.8.2
+	github.com/vmihailenco/msgpack/v5 v5.4.1
+	github.com/wneessen/go-mail v0.7.3
+	github.com/xlzd/gotp v0.1.0
+	go.uber.org/mock v0.6.0
+	golang.org/x/crypto v0.52.0
+	golang.org/x/net v0.55.0
+	golang.org/x/sys v0.45.0
+	gopkg.in/ezzarghili/recaptcha-go.v4 v4.3.0
+)
+
+require (
+	github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream v1.7.10 // indirect
+	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.18.23 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/configsources v1.4.23 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.7.23 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/v4a v1.4.24 // indirect
+	github.com/aws/aws-sdk-go-v2/service/internal/accept-encoding v1.13.9 // indirect
+	github.com/aws/aws-sdk-go-v2/service/internal/checksum v1.9.15 // indirect
+	github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.13.23 // indirect
+	github.com/aws/aws-sdk-go-v2/service/internal/s3shared v1.19.23 // indirect
+	github.com/aws/aws-sdk-go-v2/service/signin v1.0.11 // indirect
+	github.com/aws/aws-sdk-go-v2/service/sso v1.30.17 // indirect
+	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.35.21 // indirect
+	github.com/aws/aws-sdk-go-v2/service/sts v1.42.1 // indirect
+	github.com/go-viper/mapstructure/v2 v2.4.0 // indirect
+	go.yaml.in/yaml/v2 v2.4.2 // indirect
+	go.yaml.in/yaml/v3 v3.0.4 // indirect
+)
+
+require (
+	aidanwoods.dev/go-result v0.3.1 // indirect
+	github.com/TylerBrock/colorjson v0.0.0-20200706003622-8a50f05110d2 // indirect
+	github.com/ajg/form v1.5.1 // indirect
+	github.com/andybalholm/brotli v1.1.0 // indirect
+	github.com/beorn7/perks v1.0.1 // indirect
+	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
+	github.com/cespare/xxhash/v2 v2.3.0 // indirect
+	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
+	github.com/fatih/color v1.18.0 // indirect
+	github.com/fatih/structs v1.1.0 // indirect
+	github.com/go-jose/go-jose/v4 v4.1.4 // indirect
+	github.com/go-pg/zerochecker v0.2.0 // indirect
+	github.com/gobwas/glob v0.2.3 // indirect
+	github.com/google/go-querystring v1.1.0 // indirect
+	github.com/gorilla/websocket v1.5.0 // indirect
+	github.com/hashicorp/errwrap v1.1.0 // indirect
+	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
+	github.com/hashicorp/go-multierror v1.1.1 // indirect
+	github.com/hashicorp/go-retryablehttp v0.7.8 // indirect
+	github.com/hashicorp/go-rootcerts v1.0.2 // indirect
+	github.com/hashicorp/go-secure-stdlib/parseutil v0.2.0 // indirect
+	github.com/hashicorp/go-secure-stdlib/strutil v0.1.2 // indirect
+	github.com/hashicorp/go-sockaddr v1.0.7 // indirect
+	github.com/hashicorp/hcl v1.0.1-vault-7 // indirect
+	github.com/imkira/go-interpol v1.1.0 // indirect
+	github.com/inconshreveable/mousetrap v1.1.0 // indirect
+	github.com/jinzhu/inflection v1.0.0 // indirect
+	github.com/klauspost/compress v1.18.0 // indirect
+	github.com/labstack/gommon v0.5.0 // indirect
+	github.com/mattn/go-colorable v0.1.14 // indirect
+	github.com/mattn/go-isatty v0.0.22 // indirect
+	github.com/mitchellh/go-homedir v1.1.0 // indirect
+	github.com/mitchellh/go-wordwrap v1.0.1 // indirect
+	github.com/mitchellh/mapstructure v1.5.0 // indirect
+	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
+	github.com/pelletier/go-toml/v2 v2.2.4 // indirect
+	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
+	github.com/prometheus/client_model v0.6.2 // indirect
+	github.com/prometheus/common v0.66.1 // indirect
+	github.com/prometheus/procfs v0.16.1 // indirect
+	github.com/ryanuber/go-glob v1.0.0 // indirect
+	github.com/sagikazarmark/locafero v0.11.0 // indirect
+	github.com/sanity-io/litter v1.5.5 // indirect
+	github.com/sergi/go-diff v1.2.0 // indirect
+	github.com/sourcegraph/conc v0.3.1-0.20240121214520-5f936abd7ae8 // indirect
+	github.com/spf13/afero v1.15.0 // indirect
+	github.com/spf13/cast v1.10.0 // indirect
+	github.com/spf13/pflag v1.0.10 // indirect
+	github.com/subosito/gotenv v1.6.0 // indirect
+	github.com/tmthrgd/go-hex v0.0.0-20190904060850-447a3041c3bc // indirect
+	github.com/valyala/bytebufferpool v1.0.0 // indirect
+	github.com/valyala/fasthttp v1.52.0 // indirect
+	github.com/valyala/fasttemplate v1.2.2 // indirect
+	github.com/vmihailenco/bufpool v0.1.11 // indirect
+	github.com/vmihailenco/tagparser v0.1.2 // indirect
+	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
+	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
+	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
+	github.com/xeipuuv/gojsonschema v1.2.0 // indirect
+	github.com/yalp/jsonpath v0.0.0-20180802001716-5cc68e5049a0 // indirect
+	github.com/yudai/gojsondiff v1.0.0 // indirect
+	github.com/yudai/golcs v0.0.0-20170316035057-ecda9a501e82 // indirect
+	github.com/yuin/gopher-lua v1.1.1 // indirect
+	golang.org/x/oauth2 v0.30.0 // indirect
+	golang.org/x/text v0.37.0
+	golang.org/x/time v0.15.0 // indirect
+	golang.org/x/tools v0.45.0
+	google.golang.org/protobuf v1.36.8 // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
+	mellium.im/sasl v0.3.1 // indirect
+	moul.io/http2curl/v2 v2.3.0 // indirect
+)
+
+// Keep everything on the same msgpack version
+replace github.com/vmihailenco/msgpack/v5 v5.3.4 => github.com/vmihailenco/msgpack/v5 v5.4.1

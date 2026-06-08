@@ -1,0 +1,41 @@
+@use '@monetr/interface/variables';
+
+.form {
+  padding: 3 * variables.$size;
+  display: flex;
+  flex-direction: column;
+  gap: 3 * variables.$size;
+}
+
+.heading {
+  margin-bottom: variables.$size;
+  color: var(--content-emphasis);
+}
+
+.fieldLabel {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-bottom: variables.$size;
+  color: var(--content-subtle);
+}
+
+.select {
+  width: 100%;
+  padding: 2 * variables.$size 3 * variables.$size;
+  border-radius: var(--border-radius);
+  border: 1px solid var(--border);
+  background-color: var(--background-subtle);
+  color: var(--content-emphasis);
+  font-size: 1rem;
+  outline: none;
+  transition: border-color 0.2s ease;
+
+  &:focus {
+    border-color: var(--brand);
+  }
+}
+
+.btnRow {
+  margin-top: 2 * variables.$size;
+}

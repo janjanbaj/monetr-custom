@@ -1,0 +1,123 @@
+@use '@monetr/interface/mixins';
+@use '@monetr/interface/variables';
+
+.root {
+  display: flex;
+  gap: 2 * variables.$size;
+  align-items: center;
+}
+
+.textInherit {
+  font-size: inherit;
+  line-height: inherit;
+}
+
+.textExtraSmall {
+  @include mixins.text-extra-small;
+}
+
+.textSmall {
+  @include mixins.text-small;
+}
+
+.textBase {
+  @include mixins.text-base;
+}
+
+.textLarge {
+  @include mixins.text-large;
+}
+
+.textExtraLarge {
+  @include mixins.text-extra-large;
+}
+
+.text2ExtraLarge {
+  @include mixins.text-2-extra-large;
+}
+
+.text3ExtraLarge {
+  @include mixins.text-3-extra-large;
+}
+
+.text5ExtraLarge {
+  @include mixins.text-5-extra-large;
+}
+
+.colorDefault {
+  color: var(--text-color, var(--content));
+}
+
+.colorMuted {
+  color: var(--content-muted);
+}
+
+.colorSubtle {
+  color: var(--content-subtle);
+}
+
+.colorEmphasis {
+  color: var(--content-emphasis)
+}
+
+.colorInherit {
+  color: inherit;
+}
+
+.colorNegative {
+  color: var(--amount-negative);
+}
+
+.colorPositive {
+  color: var(--amount-positive);
+}
+
+.alignLeft {
+  text-align: left;
+}
+
+.alignCenter {
+  text-align: center;
+}
+
+.alignRight {
+  text-align: right;
+}
+
+.ellipsis {
+  display: block;
+  text-overflow: ellipsis;
+  min-width: 0px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.weightNormal {
+  font-weight: var(--normal);
+}
+
+.weightMedium {
+  font-weight: var(--medium);
+}
+
+.weightSemibold {
+  font-weight: var(--semibold);
+}
+
+.weightBold {
+  font-weight: var(--bold);
+}
+
+.code {
+  background-color: var(--background-subtle);
+  padding-top: 0.5 * variables.$size;
+  padding-bottom: 0.5 * variables.$size;
+  padding-left: 1.5 * variables.$size;
+  padding-right: 1.5 * variables.$size;
+  border-radius: var(--border-radius);
+}
+
+.noWrap {
+  text-wrap-mode: nowrap;
+}
